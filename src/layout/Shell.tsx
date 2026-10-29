@@ -6,7 +6,7 @@ import { useAuth } from '../auth';
 const NAV: { to: string; label: string; phase?: number }[] = [
     { to: '/', label: 'Home' },
     { to: '/team', label: 'Team' },
-    { to: '/payroll', label: 'Payroll', phase: 3 },
+    { to: '/payroll', label: 'Payroll' },
     { to: '/jobs', label: 'Jobs', phase: 4 },
     { to: '/hours', label: 'Hours', phase: 4 },
     { to: '/organization', label: 'Organization', phase: 5 },
