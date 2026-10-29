@@ -3,12 +3,13 @@
 // phone shows — hours, earnings, add-ons, deductions, net, payments and the
 // balance — plus paystub / contractor invoice PDFs and the CSV export.
 // Editing (Edit Payroll, record a payment, configuration) is the next slice.
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ApiError } from '../api/client';
 import { payroll, type PayPeriod, type UserBalance, money, hours, periodLabel, n } from '../api/payroll';
 import { team, type RosterUser } from '../api/team';
 import { useAuth } from '../auth';
 import Dialog from '../components/Dialog';
+import { EditPayrollDialog, RecordPaymentDialog } from './PayrollEdit';
 
 type Names = Map<number, RosterUser>;
 
@@ -22,11 +23,15 @@ export default function Payroll() {
     const [open, setOpen] = useState<number | null>(null);          // expanded period id
     const [detail, setDetail] = useState<{ period: PayPeriod; b: UserBalance } | null>(null);
     const [busy, setBusy] = useState<string | null>(null);
+    const [editing, setEditing] = useState<{ period: PayPeriod; b: UserBalance; kind: 'edit' | 'pay' } | null>(null);
+    const [tick, setTick] = useState(0);                          // bump to reload after a save
+    const reload = useCallback(() => setTick(t => t + 1), []);
 
     useEffect(() => {
         if (!session || !org) return;
         let cancelled = false;
-        setData(null); setError(null);
+        if (tick === 0) setData(null);
+        setError(null);
         Promise.all([
             payroll.periods(session.userId, org.organization_id, year),
             team.roster(session.userId, org.organization_id),
@@ -36,12 +41,21 @@ export default function Payroll() {
             // Newest first; the open period (today inside it) expanded by default.
             const periods = [...p.payPeriods].sort((a, b) => b.start_date.localeCompare(a.start_date));
             setData({ periods, years: p.availableYears?.length ? p.availableYears : [thisYear], earned: p.earnedYearly, paid: p.paidYearly });
-            const now = Date.now();
-            const current = periods.find(x => Date.parse(x.start_date) <= now && now <= Date.parse(x.end_date));
-            setOpen(current?.id ?? periods[0]?.id ?? null);
+            if (tick === 0) {
+                const now = Date.now();
+                const current = periods.find(x => Date.parse(x.start_date) <= now && now <= Date.parse(x.end_date));
+                setOpen(current?.id ?? periods[0]?.id ?? null);
+            }
+            // Keep an open details card in step with the fresh row.
+            setDetail(d => {
+                if (!d) return d;
+                const np = periods.find(x => x.id === d.period.id);
+                const nb = np?.userBalances?.find(x => x.userId === d.b.userId);
+                return np && nb ? { period: np, b: nb } : d;
+            });
         }).catch(e => { if (!cancelled) setError(e instanceof ApiError ? e.message : 'Could not load payroll'); });
         return () => { cancelled = true; };
-    }, [session, org, year, thisYear]);
+    }, [session, org, year, thisYear, tick]);
 
     const totals = useMemo(() => {
         const t = new Map<number, { hours: number; gross: number; net: number; paid: number; people: number }>();
@@ -147,7 +161,11 @@ export default function Payroll() {
                 {data.periods.length === 0 && <div className="card empty">No pay periods in {year}.</div>}
             </div>
 
-            {detail && <DetailsCard period={detail.period} b={detail.b} name={names.get(detail.b.userId)?.full_name ?? ''} onClose={() => setDetail(null)} />}
+            {detail && <DetailsCard period={detail.period} b={detail.b} name={names.get(detail.b.userId)?.full_name ?? ''} onClose={() => setDetail(null)}
+                onEdit={() => setEditing({ period: detail.period, b: detail.b, kind: 'edit' })}
+                onPay={() => setEditing({ period: detail.period, b: detail.b, kind: 'pay' })} />}
+            {editing?.kind === 'edit' && <EditPayrollDialog period={editing.period} b={editing.b} name={names.get(editing.b.userId)?.full_name ?? ''} onClose={() => setEditing(null)} onDone={() => { setEditing(null); reload(); }} />}
+            {editing?.kind === 'pay' && <RecordPaymentDialog period={editing.period} b={editing.b} name={names.get(editing.b.userId)?.full_name ?? ''} onClose={() => setEditing(null)} onDone={() => { setEditing(null); reload(); }} />}
         </>
     );
 }
@@ -155,7 +173,7 @@ export default function Payroll() {
 // The phone's payroll details card, read-only. Same rows, same rules: the
 // gross line appears only when it differs from what auto-calculate would
 // produce; taxes read "Not available yet" where the engine is unverified.
-function DetailsCard({ period, b, name, onClose }: { period: PayPeriod; b: UserBalance; name: string; onClose: () => void }) {
+function DetailsCard({ period, b, name, onClose, onEdit, onPay }: { period: PayPeriod; b: UserBalance; name: string; onClose: () => void; onEdit: () => void; onPay: () => void }) {
     const contractor = b.employmentType === 'contractor';
     const casual = b.employmentType === 'casual';
     const earned = n(b.totalEarned);
@@ -166,7 +184,7 @@ function DetailsCard({ period, b, name, onClose }: { period: PayPeriod; b: UserB
     );
     return (
         <Dialog title={name} subtitle={periodLabel(period) + (b.jurisdiction ? ` · ${b.jurisdiction}` : '')} onClose={onClose} wide
-            footer={<button className="btn" onClick={onClose}>Close</button>}>
+            footer={<><button className="btn" onClick={onClose}>Close</button><button className="btn" onClick={onPay}>Record payment</button><button className="btn btn-primary" onClick={onEdit}>Edit payroll</button></>}>
             <div className="eyebrow nopad">This period</div>
             <Row label="Hours worked" value={hours(b.totalHours)} />
             <Row label="Rate" value={`${money(b.hourlyRate)}/h`} />
@@ -201,7 +219,6 @@ function DetailsCard({ period, b, name, onClose }: { period: PayPeriod; b: UserB
             {b.modifiedAfterPayment && <p className="caution small">Changed after payment: was {money(b.netAtPayment)} net when paid, now {money(b.netAmount)}. {b.paymentChangeDetail ?? ''}</p>}
             {b.holidays?.length > 0 && <p className="muted small">Holidays in this period: {b.holidays.map(h => `${h.name} (${h.date})${h.eligible === false && h.reason ? ` — ${h.reason}` : ''}`).join('; ')}</p>}
             {b.notes && <p className="muted small">Note: {b.notes}</p>}
-            <p className="faint small">Editing this period from the web comes in the next phase; use the app's Edit Payroll until then.</p>
         </Dialog>
     );
 }

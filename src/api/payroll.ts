@@ -41,6 +41,9 @@ export const payroll = {
         api<{ status: string; pdf_url?: string }>('/contractor-invoice', { user_id, organization_id, pay_period_id, design: 'standard' }),
     csv: (userId: number, organizationId: number, year: number, payPeriodId?: number) =>
         api<{ status: string; csv_url?: string }>('/payroll-csv', { userId, organizationId, year, payPeriodId }),
+    // Create or replace the run for one person + period (idempotent upsert; same body as the phones).
+    saveRun: (body: Record<string, unknown>) => api('/run-payroll-for-user', body),
+    createPayment: (body: Record<string, unknown>) => api('/create-payment', body),
 };
 
 export const n = (v: unknown): number => (v == null || v === '' ? 0 : Number(v));
