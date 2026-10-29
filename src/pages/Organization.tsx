@@ -9,6 +9,8 @@ import { money, n } from '../api/payroll';
 import { dateOnly } from '../api/team';
 import { useAuth } from '../auth';
 import Dialog, { SaveFooter } from '../components/Dialog';
+import InvoiceEditor from './InvoiceEditor';
+import { invoicesApi } from '../api/invoices';
 
 export default function Organization() {
     const { session, org } = useAuth();
@@ -19,6 +21,7 @@ export default function Organization() {
     const [editDetails, setEditDetails] = useState(false);
     const [busy, setBusy] = useState<string | null>(null);
     const [confirmSend, setConfirmSend] = useState<InvoiceRow | null>(null);
+    const [editor, setEditor] = useState<{ invoiceId?: number; copyOf?: number } | null>(null);
 
     const load = useCallback(() => {
         if (!session || !org) return;
@@ -35,14 +38,15 @@ export default function Organization() {
         try { await orgApi.saveSettings(org.organization_id, next); }
         catch (e) { setError(e instanceof ApiError ? e.message : 'Could not save settings'); load(); }
     }
-    async function invoiceAction(inv: InvoiceRow, kind: 'pdf' | 'send' | 'paid' | 'unpaid') {
+    async function invoiceAction(inv: InvoiceRow, kind: 'pdf' | 'send' | 'paid' | 'unpaid' | 'delete') {
         if (!session || !org) return;
         setBusy(`${kind}-${inv.id}`); setError(null);
         try {
             if (kind === 'pdf') { const r = await orgApi.invoicePdf(session.userId, org.organization_id, inv.id); const u = r.pdf_url ?? r.pdfUrl; if (u) window.open(u, '_blank', 'noopener'); }
             else if (kind === 'send') { await orgApi.sendInvoice(session.userId, org.organization_id, inv.id); setConfirmSend(null); load(); }
             else if (kind === 'paid') { await orgApi.setInvoiceStatus(session.userId, org.organization_id, inv.id, 'paid', 'e-transfer', new Date().toISOString().slice(0, 10)); load(); }
-            else { await orgApi.setInvoiceStatus(session.userId, org.organization_id, inv.id, 'sent'); load(); }
+            else if (kind === 'unpaid') { await orgApi.setInvoiceStatus(session.userId, org.organization_id, inv.id, 'sent'); load(); }
+            else { await invoicesApi.remove(session.userId, org.organization_id, inv.id); load(); }
         } catch (e) { setError(e instanceof ApiError ? e.message : 'Could not do that'); }
         finally { setBusy(null); }
     }
@@ -102,14 +106,14 @@ export default function Organization() {
                 </section>
 
                 <section className="card card-flush">
-                    <div className="person-head" style={{ padding: '16px 18px 0' }}><h2>Invoices</h2><span className="muted small">Drafts are created and edited on the phone for now.</span></div>
+                    <div className="person-head" style={{ padding: '16px 18px 0' }}><h2>Invoices</h2><button className="btn btn-primary" onClick={() => setEditor({})}>New invoice</button></div>
                     {invoices.length === 0 ? <div className="empty">No invoices yet.</div> : (
                         <table className="table table-hover">
                             <thead><tr><th>Number</th><th>Client</th><th>Job</th><th>Issued</th><th>Due</th><th>Total</th><th>Status</th><th></th></tr></thead>
                             <tbody>
                                 {invoices.filter(i => !i.is_deleted).map(i => (
                                     <tr key={i.id}>
-                                        <td><strong>{i.invoice_number}</strong></td>
+                                        <td>{i.status === 'draft' ? <button className="row-link linkish" onClick={() => setEditor({ invoiceId: i.id })}><strong>{i.invoice_number}</strong></button> : <strong>{i.invoice_number}</strong>}</td>
                                         <td>{i.client_name ?? '—'}</td>
                                         <td>{i.job_name ?? <span className="faint">—</span>}</td>
                                         <td>{i.status === 'draft' ? <span className="faint">on send</span> : dateOnly(i.issue_date)}</td>
@@ -121,6 +125,8 @@ export default function Organization() {
                                             {(i.status === 'draft' || i.status === 'sent') && <button className="btn btn-sm" onClick={() => setConfirmSend(i)}>{i.status === 'draft' ? 'Send' : 'Resend'}</button>}
                                             {i.status === 'sent' && <button className="btn btn-sm" disabled={busy === `paid-${i.id}`} onClick={() => invoiceAction(i, 'paid')}>Mark paid</button>}
                                             {i.status === 'paid' && <button className="btn btn-sm" disabled={busy === `unpaid-${i.id}`} onClick={() => invoiceAction(i, 'unpaid')}>Mark unpaid</button>}
+                                            <button className="btn btn-sm" onClick={() => setEditor({ copyOf: i.id })}>Copy</button>
+                                            {i.status === 'draft' && <button className="btn btn-sm" disabled={busy === `delete-${i.id}`} onClick={() => { if (confirm(`Delete draft ${i.invoice_number}?`)) invoiceAction(i, 'delete'); }}>Delete</button>}
                                         </td>
                                     </tr>
                                 ))}
@@ -130,6 +136,7 @@ export default function Organization() {
                 </section>
             </div>
 
+            {editor && <InvoiceEditor invoiceId={editor.invoiceId} copyOf={editor.copyOf} onClose={() => setEditor(null)} onDone={() => { setEditor(null); load(); }} />}
             {editDetails && <DetailsDialog row={row} onClose={() => setEditDetails(false)} onDone={() => { setEditDetails(false); load(); }} />}
             {confirmSend && (
                 <Dialog title={`Send ${confirmSend.invoice_number}?`} subtitle={`${money(confirmSend.total)} to ${confirmSend.client_name ?? 'the client'}. ${confirmSend.status === 'draft' ? 'The issue and due dates become today and the client’s terms.' : 'The client receives the PDF again.'}`} onClose={() => setConfirmSend(null)}

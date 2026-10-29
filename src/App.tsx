@@ -11,6 +11,7 @@ import Payroll from './pages/Payroll';
 import Jobs from './pages/Jobs';
 import Hours from './pages/Hours';
 import Organization from './pages/Organization';
+import Clients from './pages/Clients';
 import UseTheApp from './pages/UseTheApp';
 
 function Gate() {
@@ -27,6 +28,7 @@ function Gate() {
                 <Route path="jobs" element={<Jobs />} />
                 <Route path="hours" element={<Hours />} />
                 <Route path="organization" element={<Organization />} />
+                <Route path="clients" element={<Clients />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
         </Routes>

@@ -9,6 +9,7 @@ const NAV: { to: string; label: string; phase?: number }[] = [
     { to: '/payroll', label: 'Payroll' },
     { to: '/jobs', label: 'Jobs' },
     { to: '/hours', label: 'Hours' },
+    { to: '/clients', label: 'Clients' },
     { to: '/organization', label: 'Organization' },
 ];
 
