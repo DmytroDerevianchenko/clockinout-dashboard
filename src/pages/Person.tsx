@@ -72,7 +72,7 @@ export default function Person() {
                     <h2 style={{ fontSize: 22 }}>{user.full_name} {self && <span className="pill">You</span>}</h2>
                     <div className="muted">{employmentLabel(user.employment_type)} · {statusLabel(user.status)}{user.is_clocked_in ? ` · On the clock${user.current_job_name ? ` at ${user.current_job_name}` : ''}` : ''}</div>
                 </div>
-                <div className="actions">
+                <div className="head-actions">
                     {user.status === 'active' && (user.is_clocked_in
                         ? <button className="btn" onClick={() => setEditor({ kind: 'end' })}>End shift</button>
                         : <button className="btn" onClick={() => setEditor({ kind: 'clockin' })}>Clock in</button>)}

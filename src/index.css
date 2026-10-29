@@ -127,7 +127,13 @@ p { margin: 0 0 12px; }
 .row-link:hover strong { text-decoration: underline; }
 .pill.caution { background: rgba(154, 91, 0, 0.12); color: var(--caution); }
 .pill.danger { background: rgba(179, 38, 30, 0.12); color: var(--danger); }
-.actions { text-align: right; white-space: nowrap; display: flex; gap: 8px; justify-content: flex-end; }
+/* RULE: a <td> is never a flex box — it would stop being a table cell and
+   its row's borders and height break. Buttons inside a cell sit inline;
+   the row height is fixed so rows without a button match the others. */
+td.actions { text-align: right; white-space: nowrap; }
+td.actions .btn + .btn { margin-left: 8px; }
+.table tbody td { height: 56px; }
+.head-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
 .btn-sm { padding: 6px 12px; font-size: 13px; }
 .week { display: grid; gap: 4px; min-width: 120px; font-size: 13px; }
 .week .bar { height: 4px; background: var(--surface-2); border-radius: 2px; overflow: hidden; }
