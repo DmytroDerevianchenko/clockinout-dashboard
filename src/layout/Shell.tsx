@@ -9,7 +9,7 @@ const NAV: { to: string; label: string; phase?: number }[] = [
     { to: '/payroll', label: 'Payroll' },
     { to: '/jobs', label: 'Jobs' },
     { to: '/hours', label: 'Hours' },
-    { to: '/organization', label: 'Organization', phase: 5 },
+    { to: '/organization', label: 'Organization' },
 ];
 
 export default function Shell() {

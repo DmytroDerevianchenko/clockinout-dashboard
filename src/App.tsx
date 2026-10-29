@@ -10,7 +10,7 @@ import Person from './pages/Person';
 import Payroll from './pages/Payroll';
 import Jobs from './pages/Jobs';
 import Hours from './pages/Hours';
-import Placeholder from './pages/Placeholder';
+import Organization from './pages/Organization';
 import UseTheApp from './pages/UseTheApp';
 
 function Gate() {
@@ -26,7 +26,7 @@ function Gate() {
                 <Route path="payroll" element={<Payroll />} />
                 <Route path="jobs" element={<Jobs />} />
                 <Route path="hours" element={<Hours />} />
-                <Route path="organization" element={<Placeholder title="Organization" phase={5} />} />
+                <Route path="organization" element={<Organization />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
         </Routes>
