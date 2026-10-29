@@ -10,6 +10,7 @@ import { team, type RosterUser } from '../api/team';
 import { useAuth } from '../auth';
 import Dialog from '../components/Dialog';
 import { EditPayrollDialog, RecordPaymentDialog } from './PayrollEdit';
+import PayrollConfigDialog from './PayrollConfig';
 
 type Names = Map<number, RosterUser>;
 
@@ -23,6 +24,7 @@ export default function Payroll() {
     const [open, setOpen] = useState<number | null>(null);          // expanded period id
     const [detail, setDetail] = useState<{ period: PayPeriod; b: UserBalance } | null>(null);
     const [busy, setBusy] = useState<string | null>(null);
+    const [config, setConfig] = useState(false);
     const [editing, setEditing] = useState<{ period: PayPeriod; b: UserBalance; kind: 'edit' | 'pay' } | null>(null);
     const [tick, setTick] = useState(0);                          // bump to reload after a save
     const reload = useCallback(() => setTick(t => t + 1), []);
@@ -101,6 +103,7 @@ export default function Payroll() {
                 </label>
                 <div className="muted small">Earned this year {money(data.earned)} · paid {money(data.paid)}</div>
                 <span className="spacer" />
+                <button className="btn" onClick={() => setConfig(true)}>Configuration</button>
                 <button className="btn" disabled={busy === `csv-year-`} onClick={() => openPdf('csv')}>Export year CSV</button>
             </div>
 
@@ -164,6 +167,7 @@ export default function Payroll() {
             {detail && <DetailsCard period={detail.period} b={detail.b} name={names.get(detail.b.userId)?.full_name ?? ''} onClose={() => setDetail(null)}
                 onEdit={() => setEditing({ period: detail.period, b: detail.b, kind: 'edit' })}
                 onPay={() => setEditing({ period: detail.period, b: detail.b, kind: 'pay' })} />}
+            {config && <PayrollConfigDialog onClose={() => setConfig(false)} onDone={() => { setConfig(false); reload(); }} />}
             {editing?.kind === 'edit' && <EditPayrollDialog period={editing.period} b={editing.b} name={names.get(editing.b.userId)?.full_name ?? ''} onClose={() => setEditing(null)} onDone={() => { setEditing(null); reload(); }} />}
             {editing?.kind === 'pay' && <RecordPaymentDialog period={editing.period} b={editing.b} name={names.get(editing.b.userId)?.full_name ?? ''} onClose={() => setEditing(null)} onDone={() => { setEditing(null); reload(); }} />}
         </>
