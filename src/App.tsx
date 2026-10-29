@@ -8,6 +8,8 @@ import Home from './pages/Home';
 import Team from './pages/Team';
 import Person from './pages/Person';
 import Payroll from './pages/Payroll';
+import Jobs from './pages/Jobs';
+import Hours from './pages/Hours';
 import Placeholder from './pages/Placeholder';
 import UseTheApp from './pages/UseTheApp';
 
@@ -22,8 +24,8 @@ function Gate() {
                 <Route path="team" element={<Team />} />
                 <Route path="team/:id" element={<Person />} />
                 <Route path="payroll" element={<Payroll />} />
-                <Route path="jobs" element={<Placeholder title="Jobs" phase={4} />} />
-                <Route path="hours" element={<Placeholder title="Hours" phase={4} />} />
+                <Route path="jobs" element={<Jobs />} />
+                <Route path="hours" element={<Hours />} />
                 <Route path="organization" element={<Placeholder title="Organization" phase={5} />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Route>

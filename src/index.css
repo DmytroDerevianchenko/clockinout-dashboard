@@ -180,6 +180,9 @@ td.actions .btn + .btn { margin-left: 8px; }
 .inline-row input { flex: 1; }
 .ded-row { align-items: end; }
 
+.toolbar .field.inline select { max-width: 220px; }
+tr.muted td { color: var(--ink-muted); }
+
 /* ── Modal ── */
 .backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45); display: grid; place-items: center; padding: 16px; z-index: 50; }
 .modal { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; width: 100%; max-width: 440px; max-height: 92vh; display: flex; flex-direction: column; box-shadow: var(--shadow); }

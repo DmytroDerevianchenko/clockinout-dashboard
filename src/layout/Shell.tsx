@@ -7,8 +7,8 @@ const NAV: { to: string; label: string; phase?: number }[] = [
     { to: '/', label: 'Home' },
     { to: '/team', label: 'Team' },
     { to: '/payroll', label: 'Payroll' },
-    { to: '/jobs', label: 'Jobs', phase: 4 },
-    { to: '/hours', label: 'Hours', phase: 4 },
+    { to: '/jobs', label: 'Jobs' },
+    { to: '/hours', label: 'Hours' },
     { to: '/organization', label: 'Organization', phase: 5 },
 ];
 
