@@ -1,35 +1,26 @@
-// Organization: the company details, the feature switches, and the invoices
-// list with PDF, send and status — the phone's Org Details, Settings and
-// Invoices screens, read-first with the edits an employer does from a desk.
-// Creating and editing invoice drafts stays on the phone for now.
+// Organization: the company details and the feature switches — the phone's
+// Org Details and Settings screens. Invoices and Clients have their own tabs.
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError } from '../api/client';
-import { orgApi, type OrgRow, type OrgSettings, type InvoiceRow } from '../api/org';
-import { money, n } from '../api/payroll';
-import { dateOnly } from '../api/team';
+import { orgApi, type OrgRow, type OrgSettings } from '../api/org';
+import { n } from '../api/payroll';
 import { useAuth } from '../auth';
 import Dialog, { SaveFooter } from '../components/Dialog';
-import InvoiceEditor from './InvoiceEditor';
-import { invoicesApi } from '../api/invoices';
 
 export default function Organization() {
     const { session, org } = useAuth();
     const [row, setRow] = useState<OrgRow | null>(null);
     const [settings, setSettings] = useState<OrgSettings | null>(null);
-    const [invoices, setInvoices] = useState<InvoiceRow[] | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [editDetails, setEditDetails] = useState(false);
-    const [busy, setBusy] = useState<string | null>(null);
-    const [confirmSend, setConfirmSend] = useState<InvoiceRow | null>(null);
-    const [editor, setEditor] = useState<{ invoiceId?: number; copyOf?: number } | null>(null);
 
     const load = useCallback(() => {
         if (!session || !org) return;
-        Promise.all([orgApi.list(session.userId), orgApi.settings(session.userId, org.organization_id), orgApi.invoices(session.userId, org.organization_id)])
-            .then(([o, s, i]) => { setRow(o.organizations.find(x => x.id === org.organization_id) ?? null); setSettings(s.settings); setInvoices(i.invoices); setError(null); })
+        Promise.all([orgApi.list(session.userId), orgApi.settings(session.userId, org.organization_id)])
+            .then(([o, s]) => { setRow(o.organizations.find(x => x.id === org.organization_id) ?? null); setSettings(s.settings); setError(null); })
             .catch(e => setError(e instanceof ApiError ? e.message : 'Could not load'));
     }, [session, org]);
-    useEffect(() => { setRow(null); setInvoices(null); load(); }, [load]);
+    useEffect(() => { setRow(null); load(); }, [load]);
 
     async function toggle(patch: Partial<OrgSettings>) {
         if (!org || !settings) return;
@@ -38,21 +29,9 @@ export default function Organization() {
         try { await orgApi.saveSettings(org.organization_id, next); }
         catch (e) { setError(e instanceof ApiError ? e.message : 'Could not save settings'); load(); }
     }
-    async function invoiceAction(inv: InvoiceRow, kind: 'pdf' | 'send' | 'paid' | 'unpaid' | 'delete') {
-        if (!session || !org) return;
-        setBusy(`${kind}-${inv.id}`); setError(null);
-        try {
-            if (kind === 'pdf') { const r = await orgApi.invoicePdf(session.userId, org.organization_id, inv.id); const u = r.pdf_url ?? r.pdfUrl; if (u) window.open(u, '_blank', 'noopener'); }
-            else if (kind === 'send') { await orgApi.sendInvoice(session.userId, org.organization_id, inv.id); setConfirmSend(null); load(); }
-            else if (kind === 'paid') { await orgApi.setInvoiceStatus(session.userId, org.organization_id, inv.id, 'paid', 'e-transfer', new Date().toISOString().slice(0, 10)); load(); }
-            else if (kind === 'unpaid') { await orgApi.setInvoiceStatus(session.userId, org.organization_id, inv.id, 'sent'); load(); }
-            else { await invoicesApi.remove(session.userId, org.organization_id, inv.id); load(); }
-        } catch (e) { setError(e instanceof ApiError ? e.message : 'Could not do that'); }
-        finally { setBusy(null); }
-    }
 
     if (error && !row) return <div className="card danger">{error}</div>;
-    if (!row || !settings || !invoices) return <div className="card muted">Loading…</div>;
+    if (!row || !settings) return <div className="card muted">Loading…</div>;
     const addr = [row.street, row.unit_number, row.city, row.state_province, row.postal_code, row.country_code].filter(Boolean).join(', ');
     const tax = row.tax_config_json as { rate?: number; registration_number?: string } | null;
     const Sw = ({ k, label, sub }: { k: keyof OrgSettings; label: string; sub?: string }) => (
@@ -104,46 +83,8 @@ export default function Organization() {
                         </div>
                     </div>
                 </section>
-
-                <section className="card card-flush">
-                    <div className="person-head" style={{ padding: '16px 18px 0' }}><h2>Invoices</h2><button className="btn btn-primary" onClick={() => setEditor({})}>New invoice</button></div>
-                    {invoices.length === 0 ? <div className="empty">No invoices yet.</div> : (
-                        <table className="table table-hover">
-                            <thead><tr><th>Number</th><th>Client</th><th>Job</th><th>Issued</th><th>Due</th><th>Total</th><th>Status</th><th></th></tr></thead>
-                            <tbody>
-                                {invoices.filter(i => !i.is_deleted).map(i => (
-                                    <tr key={i.id}>
-                                        <td>{i.status === 'draft' ? <button className="row-link linkish" onClick={() => setEditor({ invoiceId: i.id })}><strong>{i.invoice_number}</strong></button> : <strong>{i.invoice_number}</strong>}</td>
-                                        <td>{i.client_name ?? '—'}</td>
-                                        <td>{i.job_name ?? <span className="faint">—</span>}</td>
-                                        <td>{i.status === 'draft' ? <span className="faint">on send</span> : dateOnly(i.issue_date)}</td>
-                                        <td className={i.is_overdue ? 'danger' : ''}>{i.status === 'draft' ? <span className="faint">on send</span> : dateOnly(i.due_date)}</td>
-                                        <td>{money(i.total)}</td>
-                                        <td><span className={'pill' + (i.status === 'paid' ? '' : i.is_overdue ? ' danger' : i.status === 'draft' ? ' caution' : '')}>{i.is_overdue && i.status === 'sent' ? 'Overdue' : i.status}</span></td>
-                                        <td className="actions">
-                                            <button className="btn btn-sm" disabled={busy === `pdf-${i.id}`} onClick={() => invoiceAction(i, 'pdf')}>PDF</button>
-                                            {(i.status === 'draft' || i.status === 'sent') && <button className="btn btn-sm" onClick={() => setConfirmSend(i)}>{i.status === 'draft' ? 'Send' : 'Resend'}</button>}
-                                            {i.status === 'sent' && <button className="btn btn-sm" disabled={busy === `paid-${i.id}`} onClick={() => invoiceAction(i, 'paid')}>Mark paid</button>}
-                                            {i.status === 'paid' && <button className="btn btn-sm" disabled={busy === `unpaid-${i.id}`} onClick={() => invoiceAction(i, 'unpaid')}>Mark unpaid</button>}
-                                            <button className="btn btn-sm" onClick={() => setEditor({ copyOf: i.id })}>Copy</button>
-                                            {i.status === 'draft' && <button className="btn btn-sm" disabled={busy === `delete-${i.id}`} onClick={() => { if (confirm(`Delete draft ${i.invoice_number}?`)) invoiceAction(i, 'delete'); }}>Delete</button>}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    )}
-                </section>
             </div>
-
-            {editor && <InvoiceEditor invoiceId={editor.invoiceId} copyOf={editor.copyOf} onClose={() => setEditor(null)} onDone={() => { setEditor(null); load(); }} />}
             {editDetails && <DetailsDialog row={row} onClose={() => setEditDetails(false)} onDone={() => { setEditDetails(false); load(); }} />}
-            {confirmSend && (
-                <Dialog title={`Send ${confirmSend.invoice_number}?`} subtitle={`${money(confirmSend.total)} to ${confirmSend.client_name ?? 'the client'}. ${confirmSend.status === 'draft' ? 'The issue and due dates become today and the client’s terms.' : 'The client receives the PDF again.'}`} onClose={() => setConfirmSend(null)}
-                    footer={<SaveFooter onCancel={() => setConfirmSend(null)} label="Send" saving={busy === `send-${confirmSend.id}`} onSave={() => invoiceAction(confirmSend, 'send')} />}>
-                    <p className="muted">The email goes from invoices@clockinout.ca with your email as the reply address.</p>
-                </Dialog>
-            )}
         </>
     );
 }

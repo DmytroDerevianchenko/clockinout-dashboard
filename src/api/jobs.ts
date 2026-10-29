@@ -5,7 +5,7 @@ export type Job = {
     id: number; name: string; organization_id: number; created_at: string;
     latitude: number | null; longitude: number | null; address: string | null; description: string | null;
     budget: number | string | null; duration: number | string | null; archived: boolean;
-    geofence_enabled: boolean | null; geofence_radius: number | null; active_workers?: number | null;
+    geofence_enabled: boolean | null; geofence_radius: number | null; active_workers?: unknown[] | number | null;   // the server sends the LIST of people on site
 };
 
 export const jobsApi = {

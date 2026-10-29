@@ -50,7 +50,7 @@ export default function Jobs() {
                                     {j.description && <div className="faint small">{j.description}</div>}</td>
                                 <td>{j.address ?? <span className="faint">—</span>}{j.latitude == null && <div className="faint small">No pin — set the address on the phone to place one</div>}</td>
                                 <td>{j.geofence_enabled ? `On · ${j.geofence_radius ?? 100} m` : <span className="faint">Off</span>}</td>
-                                <td>{j.active_workers ?? 0}</td>
+                                <td>{Array.isArray(j.active_workers) ? j.active_workers.length : (j.active_workers ?? 0)}</td>
                                 <td className="actions"><button className="btn btn-sm" onClick={() => archive(j)}>{j.archived ? 'Unarchive' : 'Archive'}</button></td>
                             </tr>
                         ))}
