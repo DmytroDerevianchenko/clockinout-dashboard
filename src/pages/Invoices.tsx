@@ -63,7 +63,7 @@ export default function Invoices() {
                         <tbody>
                             {list.map(i => (
                                 <tr key={i.id}>
-                                    <td>{i.status === 'draft' ? <button className="row-link linkish" onClick={() => setEditor({ invoiceId: i.id })}><strong>{i.invoice_number}</strong></button> : <strong>{i.invoice_number}</strong>}</td>
+                                    <td>{i.status === 'draft' ? <button className="row-link linkish" onClick={() => setEditor({ invoiceId: i.id })}><strong>{i.invoice_number}</strong></button> : <strong>{i.invoice_number}</strong>}{i.is_opening && <span className="pill" title="A balance carried forward from before the app">Carried forward</span>}</td>
                                     <td>{i.client_name ?? '—'}</td>
                                     <td>{i.job_name ?? <span className="faint">—</span>}</td>
                                     <td>{i.status === 'draft' ? <span className="faint">on send</span> : dateOnly(i.issue_date)}</td>

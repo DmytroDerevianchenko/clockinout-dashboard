@@ -7,6 +7,8 @@ export type Client = {
     id: number; company_name: string; contact_name: string | null; email: string | null; cc_emails: string[] | null; phone: string | null;
     street: string | null; unit_number: string | null; city: string | null; state_province: string | null; postal_code: string | null; country_code: string | null;
     default_tax_rate: number | string | null; payment_terms_days: number | null; notes: string | null; is_deleted: boolean; invoice_count?: number;
+    // Server rollups: sent+paid total, and what is still outstanding (sent, unpaid).
+    total_billed?: number; total_outstanding?: number;
 };
 export type ClientInput = {
     companyName: string; contactName?: string | null; email?: string | null; ccEmails?: string[]; phone?: string | null;
@@ -36,4 +38,8 @@ export const invoicesApi = {
     create: (userId: number, organizationId: number, inv: InvoiceInput) => api<{ status: string; invoice?: { id: number } }>('/invoices/create', { userId, organizationId, ...inv }),
     update: (userId: number, organizationId: number, invoiceId: number, inv: InvoiceInput) => api('/invoices/update', { userId, organizationId, invoiceId, ...inv }),
     remove: (userId: number, organizationId: number, invoiceId: number) => api('/invoices/delete', { userId, organizationId, invoiceId }),
+    // A balance carried forward from before the app: the server makes a one-line,
+    // no-tax invoice born 'sent' (issue date = yesterday unless given) and flags it.
+    openingBalance: (userId: number, organizationId: number, clientId: number, amount: number, issueDate?: string | null, description?: string | null) =>
+        api<{ status: string; id?: number; invoiceNumber?: string }>('/invoices/create', { userId, organizationId, clientId, opening: true, amount, issueDate: issueDate ?? null, description: description ?? null }),
 };

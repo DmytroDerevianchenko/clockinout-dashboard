@@ -28,6 +28,8 @@ export type InvoiceRow = {
     subtotal: number | string; tax_rate: number | string; tax_amount: number | string; total: number | string; currency_code: string | null;
     sent_at: string | null; sent_to_email: string | null; paid_at: string | null; payment_method: string | null; is_deleted: boolean;
     client_id: number; client_name: string | null; job_id: number | null; job_name: string | null; is_overdue: boolean;
+    // A balance carried forward from before the app (one line, no tax, born sent).
+    is_opening?: boolean;
 };
 
 /** PUT /organizations is a whole-row write: send the row back with the changes applied. */
