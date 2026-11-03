@@ -9,10 +9,11 @@ import { team, type RosterUser, money, dateOnly, dateTime, employmentLabel, stat
 import { useAuth } from '../auth';
 import Dialog, { SaveFooter } from '../components/Dialog';
 import { useRoster, ClockInDialog } from './Team';
+import BalanceDialog from '../components/BalanceDialog';
 
 type Editor =
     | { kind: 'text'; field: string; label: string; value: string; type?: string }
-    | { kind: 'status' } | { kind: 'type' } | { kind: 'rate' } | { kind: 'tax' } | { kind: 'jurisdiction' } | { kind: 'clockin' } | { kind: 'end' };
+    | { kind: 'status' } | { kind: 'type' } | { kind: 'rate' } | { kind: 'tax' } | { kind: 'jurisdiction' } | { kind: 'clockin' } | { kind: 'end' } | { kind: 'balance' };
 
 function Row({ label, value, placeholder, onClick, locked, tone }: { label: string; value?: ReactNode; placeholder?: string; onClick?: () => void; locked?: boolean; tone?: 'caution' | 'danger' }) {
     const empty = value === undefined || value === null || value === '';
@@ -31,6 +32,12 @@ export default function Person() {
     const { data, error, reload } = useRoster();
     const [editor, setEditor] = useState<Editor | null>(null);
     const [flash, setFlash] = useState<string | null>(null);
+    const [owedRow, setOwedRow] = useState<{ owed: number } | null>(null);
+    const [owedTick, setOwedTick] = useState(0);
+    useEffect(() => {
+        if (!session || !org) return;
+        team.owed(session.userId, org.organization_id).then(r => setOwedRow(r.employees.find(e => e.user_id === Number(id)) ?? null)).catch(() => {});
+    }, [session, org, id, owedTick]);
 
     const user = useMemo(() => data?.users.find(u => u.id === Number(id)) ?? null, [data, id]);
     const self = !!user && user.id === session?.userId;
@@ -110,6 +117,8 @@ export default function Person() {
                         placeholder="Tap to set" onClick={() => setEditor({ kind: 'rate' })} />
                     {!contractor && <Row label="Tax profile" value={taxSummary} onClick={() => setEditor({ kind: 'tax' })} />}
                     {!contractor && <Row label="Tax jurisdiction" value={user.tax_jurisdiction_override?.replace(/^CA-/, '')} placeholder="Organization’s province" onClick={() => setEditor({ kind: 'jurisdiction' })} />}
+                    {user.role !== 'employer' && <Row label="Balance" value={owedRow ? (Math.abs(owedRow.owed) < 0.005 ? 'Settled' : owedRow.owed > 0 ? `You owe them ${money(owedRow.owed)}` : `They owe you ${money(-owedRow.owed)}`) : undefined}
+                        placeholder="Loading…" tone={owedRow && owedRow.owed > 0.005 ? 'danger' : undefined} onClick={() => setEditor({ kind: 'balance' })} />}
                     <Row label="Notes" value={user.notes} placeholder="Optional — tap to add" onClick={() => setEditor(text('notes', 'Notes', user.notes))} />
                     <Row label="Geofencing" value={user.geofence_enabled ? `Enabled (${user.geofence_radius ?? 100} m)` : 'Disabled'} />
                 </section>
@@ -138,6 +147,7 @@ export default function Person() {
                     current={user.tax_jurisdiction_override ?? ''} onClose={() => setEditor(null)} onPick={v => save('tax_jurisdiction_override', v)} />
             )}
             {editor?.kind === 'rate' && <RateDialog user={user} onClose={() => setEditor(null)} onSave={async (rate, salary) => { await save('current_rate', rate); if (salary !== undefined) await save('salary_amount', salary); }} />}
+            {editor?.kind === 'balance' && <BalanceDialog userId={user.id} name={user.full_name} onClose={() => setEditor(null)} onChanged={() => setOwedTick(t => t + 1)} />}
             {editor?.kind === 'tax' && <TaxProfileDialog user={user} onClose={() => setEditor(null)} onDone={() => { setEditor(null); reload(); }} onError={setFlash} />}
             {editor?.kind === 'clockin' && <ClockInDialog user={user} onClose={() => setEditor(null)} onDone={() => { setEditor(null); reload(); }} />}
             {editor?.kind === 'end' && session && org && (

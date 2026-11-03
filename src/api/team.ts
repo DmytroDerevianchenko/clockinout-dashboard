@@ -71,7 +71,20 @@ export const team = {
 
     sendInvite: (senderEmail: string, inviteEmail: string, organizationId: number) =>
         api<{ status: string; message?: string }>('/send-invite', { email: senderEmail, inviteEmail, organizationId }),
+
+    // ── Balances: what the org owes each person (net − paid + adjustments), all time ──
+    owed: (userId: number, organizationId: number) =>
+        apiGet<{ status: string; employees: OwedRow[]; total_owed: number; total_overpaid: number }>('/payroll-owed', { userId, organizationId }),
+    adjustments: (userId: number, organizationId: number, targetUserId: number) =>
+        apiGet<{ status: string; adjustments: Adjustment[] }>('/balance-adjustments', { userId, organizationId, targetUserId }),
+    addAdjustment: (userId: number, organizationId: number, a: { targetUserId: number; amount: number; adjustedOn?: string | null; kind: 'opening' | 'adjustment'; note?: string | null }) =>
+        api('/balance-adjustments', { userId, organizationId, ...a }),
+    deleteAdjustment: (userId: number, organizationId: number, id: number) =>
+        api('/balance-adjustments/delete', { userId, organizationId, id }),
 };
+export type OwedRow = { user_id: number; full_name: string; status: string; net: number; paid: number; adjustments: number; owed: number };
+// Positive = the organization owes the person; negative = the person owes the organization.
+export type Adjustment = { id: number; user_id: number; amount: number; adjusted_on: string; kind: 'opening' | 'adjustment'; note: string | null; created_at: string };
 
 // ── display helpers shared by the Team pages ──
 export const money = (v: unknown) => `$${n(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;

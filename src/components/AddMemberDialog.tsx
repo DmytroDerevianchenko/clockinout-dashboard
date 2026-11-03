@@ -15,6 +15,8 @@ export default function AddMemberDialog({ onClose, onDone }: { onClose: () => vo
     const today = new Date().toISOString().slice(0, 10);
     const [f, setF] = useState({ email: '', fullName: '', role: 'employee' as 'employee' | 'accountant', employmentType: 'full_time', currentRate: '', startDate: today, phoneNumber: '', street: '', city: '', state: '', postalCode: '', country: 'CA' });
     const [invite, setInvite] = useState(true);
+    const [balDir, setBalDir] = useState<'owe' | 'owed'>('owe');
+    const [balAmount, setBalAmount] = useState('');
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [note, setNote] = useState<string | null>(null);
@@ -32,6 +34,19 @@ export default function AddMemberDialog({ onClose, onDone }: { onClose: () => vo
                 currentRate: f.currentRate ? Number(f.currentRate) : null,
                 street: f.street || null, city: f.city || null, state: f.state || null, postalCode: f.postalCode || null, country: f.country || null,
             });
+            if (Number(balAmount) > 0) {
+                // The new row's id comes from the roster; the opening balance is dated yesterday
+                // (the last day before the app took over).
+                const roster = await team.roster(session.userId, org.organization_id);
+                const created = roster.users.find(u => u.email.toLowerCase() === f.email.trim().toLowerCase());
+                if (created) {
+                    const y = new Date(); y.setDate(y.getDate() - 1);
+                    await team.addAdjustment(session.userId, org.organization_id, {
+                        targetUserId: created.id, amount: (Number(balAmount) || 0) * (balDir === 'owe' ? 1 : -1),
+                        adjustedOn: y.toISOString().slice(0, 10), kind: 'opening', note: 'Balance carried forward from previous records',
+                    });
+                }
+            }
             if (invite) {
                 const r = await team.sendInvite(session.email, f.email.trim(), org.organization_id);
                 setNote(r.message ?? 'Invite sent.');
@@ -60,6 +75,13 @@ export default function AddMemberDialog({ onClose, onDone }: { onClose: () => vo
                 <label className="field"><span>Province</span><input value={f.state} onChange={set('state')} /></label>
                 <label className="field"><span>Postal code</span><input value={f.postalCode} onChange={set('postalCode')} /></label>
                 <label className="field"><span>Country</span><input value={f.country} onChange={set('country')} /></label>
+            </div>
+            <div className="eyebrow nopad">Starting balance (optional)</div>
+            <p className="muted small">If this person was already on your payroll, enter what stands between you today so the app's balance starts right.</p>
+            <div className="grid-2">
+                <label className="field"><span>Who owes whom</span>
+                    <select value={balDir} onChange={e => setBalDir(e.target.value as 'owe' | 'owed')}><option value="owe">I still owe them</option><option value="owed">They owe me</option></select></label>
+                <label className="field"><span>Amount ($)</span><input inputMode="decimal" value={balAmount} onChange={e => setBalAmount(e.target.value.replace(/[^0-9.]/g, ''))} placeholder="0" /></label>
             </div>
             <label className="check"><input type="checkbox" checked={invite} onChange={e => setInvite(e.target.checked)} /> Send an invite email now</label>
             {error && <p className="error-line">{error}</p>}

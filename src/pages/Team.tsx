@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ApiError } from '../api/client';
-import { team, type RosterUser, type RosterReply, type JobEntry, money, employmentLabel, statusLabel, timeOnly } from '../api/team';
+import { team, type RosterUser, type RosterReply, type JobEntry, type OwedRow, money, employmentLabel, statusLabel, timeOnly } from '../api/team';
 import { useAuth } from '../auth';
 import Dialog, { SaveFooter } from '../components/Dialog';
 import AddMemberDialog from '../components/AddMemberDialog';
@@ -36,6 +36,11 @@ export default function Team() {
     const [adding, setAdding] = useState(false);
     const [busy, setBusy] = useState<number | null>(null);
     const [actionError, setActionError] = useState<string | null>(null);
+    const [owed, setOwed] = useState<Map<number, OwedRow>>(new Map());
+    useEffect(() => {
+        if (!session || !org) return;
+        team.owed(session.userId, org.organization_id).then(r => setOwed(new Map(r.employees.map(e => [e.user_id, e])))).catch(() => { /* balance column stays blank */ });
+    }, [session, org, data]);
 
     const users = useMemo(() => {
         const list = data?.users ?? [];
@@ -69,7 +74,7 @@ export default function Team() {
             {actionError && <p className="error-line">{actionError}</p>}
             <div className="card card-flush">
                 <table className="table table-hover">
-                    <thead><tr><th>Name</th><th>Type</th><th>Rate</th><th>This week</th><th>Status</th><th></th></tr></thead>
+                    <thead><tr><th>Name</th><th>Type</th><th>Rate</th><th>This week</th><th>Balance</th><th>Status</th><th></th></tr></thead>
                     <tbody>
                         {users.map(u => {
                             const self = u.id === session?.userId;
@@ -99,6 +104,7 @@ export default function Team() {
                                             </div>
                                         ) : <span>{u.week_hours.toFixed(1)} h</span>}
                                     </td>
+                                    <td>{(() => { const o = owed.get(u.id); if (!o || u.role === 'employer') return <span className="faint">—</span>; const b = o.owed; return Math.abs(b) < 0.005 ? <span className="faint">settled</span> : <span className={b > 0 ? 'danger' : 'caution'} title={b > 0 ? 'You owe them' : 'They owe you'}>{b > 0 ? '' : '−'}{money(Math.abs(b))}</span>; })()}</td>
                                     <td><span className={'pill' + (u.status === 'terminated' ? ' danger' : u.status === 'inactive' ? ' caution' : '')}>{statusLabel(u.status)}</span></td>
                                     <td className="actions">
                                         {u.status === 'active' && u.employment_type !== null && (
@@ -110,7 +116,7 @@ export default function Team() {
                                 </tr>
                             );
                         })}
-                        {users.length === 0 && <tr><td colSpan={6} className="empty">Nobody matches.</td></tr>}
+                        {users.length === 0 && <tr><td colSpan={7} className="empty">Nobody matches.</td></tr>}
                     </tbody>
                 </table>
             </div>
