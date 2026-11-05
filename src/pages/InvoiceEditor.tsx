@@ -25,6 +25,9 @@ export default function InvoiceEditor({ invoiceId, copyOf, onClose, onDone }: { 
     const [taxRate, setTaxRate] = useState('13');
     const [issueDate, setIssueDate] = useState('');
     const [dueDate, setDueDate] = useState('');
+    // Once the due date is set by hand here, an issue-date change leaves it alone;
+    // until then it follows the issue date by the client's terms.
+    const [dueTouched, setDueTouched] = useState(false);
     const [notes, setNotes] = useState('');
     const [terms, setTerms] = useState('');
     const [loaded, setLoaded] = useState(!invoiceId && !copyOf);
@@ -56,6 +59,12 @@ export default function InvoiceEditor({ invoiceId, copyOf, onClose, onDone }: { 
     const tax = r2(subtotal * ((Number(taxRate) || 0) / 100));
     const total = r2(subtotal + tax);
     const setLine = (i: number, k: keyof Line, v: string) => setLines(ls => ls.map((l, j) => j === i ? { ...l, [k]: v } : l));
+    const onIssueDate = (v: string) => {
+        setIssueDate(v);
+        if (dueTouched || !v) return;
+        const d = new Date(v + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + (client?.payment_terms_days ?? 30));
+        setDueDate(d.toISOString().slice(0, 10));
+    };
 
     async function save() {
         if (!session || !org || clientId === '') return;
@@ -120,8 +129,8 @@ export default function InvoiceEditor({ invoiceId, copyOf, onClose, onDone }: { 
                         <label className="field"><span>Tax rate (%)</span><input inputMode="decimal" value={taxRate} onChange={e => setTaxRate(e.target.value.replace(/[^0-9.]/g, ''))} /></label>
                         <div className="field"><span>Totals</span>
                             <div className="rvalue">Subtotal {money(subtotal)} · Tax {money(tax)} · <strong>Total {money(total)}</strong></div></div>
-                        <label className="field"><span>Issue date</span><input type="date" value={issueDate} onChange={e => setIssueDate(e.target.value)} /><small className="muted">Blank = the day it is sent.</small></label>
-                        <label className="field"><span>Due date</span><input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} /><small className="muted">Blank = issue date + {client?.payment_terms_days ?? 30} days.</small></label>
+                        <label className="field"><span>Issue date</span><input type="date" value={issueDate} onChange={e => onIssueDate(e.target.value)} /><small className="muted">Blank = the day it is sent.</small></label>
+                        <label className="field"><span>Due date</span><input type="date" value={dueDate} onChange={e => { setDueDate(e.target.value); setDueTouched(true); }} /><small className="muted">Blank = issue date + {client?.payment_terms_days ?? 30} days.</small></label>
                     </div>
                     <label className="field"><span>Notes (printed on the invoice)</span><textarea rows={2} value={notes} onChange={e => setNotes(e.target.value)} /></label>
                     <label className="field"><span>Terms</span><input value={terms} onChange={e => setTerms(e.target.value)} placeholder="Payable within 30 days by e-transfer." /></label>
