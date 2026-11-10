@@ -5,6 +5,7 @@ import { ApiError } from '../api/client';
 import { orgApi, type OrgRow, type OrgSettings } from '../api/org';
 import { n } from '../api/payroll';
 import { useAuth } from '../auth';
+import { SkeletonRecord } from '../components/Skeleton';
 import Dialog, { SaveFooter } from '../components/Dialog';
 
 export default function Organization() {
@@ -31,7 +32,7 @@ export default function Organization() {
     }
 
     if (error && !row) return <div className="card danger">{error}</div>;
-    if (!row || !settings) return <div className="card muted">Loading…</div>;
+    if (!row || !settings) return <SkeletonRecord groups={2} rows={5} />;
     const addr = [row.street, row.unit_number, row.city, row.state_province, row.postal_code, row.country_code].filter(Boolean).join(', ');
     const tax = row.tax_config_json as { rate?: number; registration_number?: string } | null;
     const Sw = ({ k, label, sub }: { k: keyof OrgSettings; label: string; sub?: string }) => (

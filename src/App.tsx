@@ -3,6 +3,7 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth';
+import { ToastProvider } from './components/Toast';
 import Shell from './layout/Shell';
 import Login from './pages/Login';
 import Home from './pages/Home';
@@ -46,9 +47,11 @@ function Gate() {
 export default function App() {
     return (
         <AuthProvider>
-            <BrowserRouter>
-                <Gate />
-            </BrowserRouter>
+            <ToastProvider>
+                <BrowserRouter>
+                    <Gate />
+                </BrowserRouter>
+            </ToastProvider>
         </AuthProvider>
     );
 }

@@ -8,6 +8,7 @@ import { ApiError } from '../api/client';
 import { payroll, type PayPeriod, type UserBalance, money, hours, periodLabel, n } from '../api/payroll';
 import { team, type RosterUser } from '../api/team';
 import { useAuth } from '../auth';
+import { SkeletonList } from '../components/Skeleton';
 import Dialog from '../components/Dialog';
 import { EditPayrollDialog, RecordPaymentDialog } from './PayrollEdit';
 import PayrollConfigDialog from './PayrollConfig';
@@ -91,7 +92,7 @@ export default function Payroll() {
     }
 
     if (error) return <div className="card danger">{error}</div>;
-    if (!data) return <div className="card muted">Loading…</div>;
+    if (!data) return <SkeletonList n={5} />;
 
     return (
         <>
@@ -121,11 +122,21 @@ export default function Payroll() {
                                     <strong>{periodLabel(p)}</strong>
                                     <div className="faint small">{t.people} {t.people === 1 ? 'person' : 'people'} · {hours(t.hours)}{p.status !== 'open' ? ` · ${p.status}` : ''}</div>
                                 </div>
-                                <div className="period-sums">
-                                    <span><em>Gross</em>{money(t.gross)}</span>
-                                    <span><em>Net</em>{money(t.net)}</span>
-                                    <span><em>Paid</em>{money(t.paid)}</span>
-                                    <span className={Math.abs(outstanding) > 0.009 ? (outstanding > 0 ? 'danger' : 'caution') : ''}><em>Owed</em>{money(outstanding)}</span>
+                                <div className="period-right">
+                                    <div className="period-sums">
+                                        <span><em>Gross</em>{money(t.gross)}</span>
+                                        <span><em>Net</em>{money(t.net)}</span>
+                                        <span><em>Paid</em>{money(t.paid)}</span>
+                                    </div>
+                                    {/* The settlement line: how much of the net has gone out, and what is left. */}
+                                    <div className="settle">
+                                        {t.net <= 0.009 && Math.abs(outstanding) <= 0.009 ? <span className="pill">No pay yet</span>
+                                            : Math.abs(outstanding) <= 0.009 ? <span className="pill live">Settled</span>
+                                            : outstanding > 0 ? <span className="pill danger">Owed {money(outstanding)}</span>
+                                            : <span className="pill caution">Overpaid {money(-outstanding)}</span>}
+                                        <div className="bar"><div className={Math.abs(outstanding) <= 0.009 && t.net > 0.009 ? 'done' : ''} style={{ width: `${t.net > 0.009 ? Math.min(100, Math.max(0, (t.paid / t.net) * 100)) : 0}%` }} /></div>
+                                    </div>
+                                    <span className="period-chev" aria-hidden="true">›</span>
                                 </div>
                             </button>
                             {isOpen && (

@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import { ApiError } from '../api/client';
 import { team, type RosterUser, type RosterReply, type JobEntry, type OwedRow, money, employmentLabel, statusLabel, timeOnly } from '../api/team';
 import { useAuth } from '../auth';
+import { SkeletonTable } from '../components/Skeleton';
 import Dialog, { SaveFooter } from '../components/Dialog';
 import AddMemberDialog from '../components/AddMemberDialog';
 
@@ -60,7 +61,7 @@ export default function Team() {
     }
 
     if (error) return <div className="card danger">{error}</div>;
-    if (!data) return <div className="card muted">Loading…</div>;
+    if (!data) return <SkeletonTable rows={6} cols={6} />;
     const ot = data.overtime;
 
     return (

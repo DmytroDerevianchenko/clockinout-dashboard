@@ -12,6 +12,7 @@ import { hoursApi, fmtDay, fmtTime, type CopyCandidate } from '../api/hours';
 import type { RosterUser } from '../api/team';
 import { useAuth } from '../auth';
 import Dialog, { SaveFooter } from './Dialog';
+import { SkeletonLines } from './Skeleton';
 
 const localDay = (d: Date) => { const p = (x: number) => String(x).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`; };
 // The range as instants: local start of the first day → local end of the last.
@@ -86,7 +87,7 @@ export default function CopyShiftsDialog({ people, defaultTarget, onClose, onDon
             <div className="eyebrow nopad">Shifts</div>
             {same ? <p className="muted">Pick two different people.</p>
                 : !ready ? <p className="muted">Pick the two people to see the shifts.</p>
-                : loading || !preview ? <p className="muted">Loading…</p>
+                : loading || !preview ? <SkeletonLines n={4} />
                 : preview.length === 0 ? <p className="muted">No completed shifts in these days.</p>
                 : (
                     <>

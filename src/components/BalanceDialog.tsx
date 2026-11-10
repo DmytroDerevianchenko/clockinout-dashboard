@@ -6,6 +6,7 @@ import { ApiError } from '../api/client';
 import { team, type Adjustment, type OwedRow, money, dateOnly } from '../api/team';
 import { useAuth } from '../auth';
 import Dialog, { SaveFooter } from './Dialog';
+import { SkeletonLines } from './Skeleton';
 
 export default function BalanceDialog({ userId, name, onClose, onChanged }: { userId: number; name: string; onClose: () => void; onChanged: () => void }) {
     const { session, org } = useAuth();
@@ -74,7 +75,7 @@ export default function BalanceDialog({ userId, name, onClose, onChanged }: { us
             ) : (
                 <>
                     <div className="eyebrow nopad">Adjustments</div>
-                    {!list ? <p className="muted">Loading…</p> : list.length === 0 ? <p className="muted">None. If this person was already on the payroll before the app, add an opening balance so what is owed starts right.</p> : (
+                    {!list ? <SkeletonLines n={4} /> : list.length === 0 ? <p className="muted">None. If this person was already on the payroll before the app, add an opening balance so what is owed starts right.</p> : (
                         <table className="table">
                             <thead><tr><th>Date</th><th>Kind</th><th>Note</th><th>Amount</th><th></th></tr></thead>
                             <tbody>

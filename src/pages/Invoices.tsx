@@ -7,6 +7,7 @@ import { invoicesApi } from '../api/invoices';
 import { money } from '../api/payroll';
 import { dateOnly } from '../api/team';
 import { useAuth } from '../auth';
+import { SkeletonTable } from '../components/Skeleton';
 import Dialog, { SaveFooter } from '../components/Dialog';
 import InvoiceEditor from './InvoiceEditor';
 
@@ -40,7 +41,7 @@ export default function Invoices() {
     }
 
     if (error && !invoices) return <div className="card danger">{error}</div>;
-    if (!invoices) return <div className="card muted">Loading…</div>;
+    if (!invoices) return <SkeletonTable rows={6} cols={7} />;
     const list = invoices.filter(i => filter === 'all' || i.status === filter);
     const outstanding = invoices.filter(i => i.status === 'sent').reduce((s, i) => s + Number(i.total), 0);
 

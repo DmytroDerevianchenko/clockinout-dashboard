@@ -8,6 +8,7 @@ import { ApiError } from '../api/client';
 import { orgApi, statutoryOvertime, type OrgRow, type PayrollConfig } from '../api/org';
 import { useAuth } from '../auth';
 import Dialog, { SaveFooter } from '../components/Dialog';
+import { SkeletonLines } from '../components/Skeleton';
 
 const TYPES = [['full_time', 'Full-time'], ['part_time', 'Part-time'], ['casual', 'Casual'], ['salary', 'Salaried']];
 const amountOf = (formula: string | undefined) => { const m = /^fixed:([0-9.]+)$/.exec(formula ?? ''); return m ? m[1] : ''; };
@@ -80,7 +81,7 @@ export default function PayrollConfigDialog({ onClose, onDone }: { onClose: () =
         <Dialog title="Payroll configuration" wide onClose={onClose}
             subtitle="Set up payroll rules. Changes apply to pay periods calculated from now on; periods already calculated keep their figures — open one and use Edit payroll to change it."
             footer={<SaveFooter onCancel={onClose} onSave={save} saving={saving} disabled={!row} />}>
-            {!row ? <p className="muted">Loading…</p> : (
+            {!row ? <SkeletonLines n={4} /> : (
                 <>
                     {(!row.country_code || !row.state_province) && <p className="caution small">Set the organization's address first. Taxes, overtime and holiday pay follow its province; until then Ontario is assumed.</p>}
                     <div className="eyebrow nopad">Overtime rules <button type="button" className="btn btn-sm" style={{ marginLeft: 10 }} onClick={loadDefaults}>Load defaults for {row.state_province || 'this province'}</button></div>

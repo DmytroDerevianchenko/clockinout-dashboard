@@ -5,6 +5,7 @@ import { ApiError } from '../api/client';
 import { clientsApi, invoicesApi, type Client, type ClientInput } from '../api/invoices';
 import { money } from '../api/payroll';
 import { useAuth } from '../auth';
+import { SkeletonTable } from '../components/Skeleton';
 import Dialog, { SaveFooter } from '../components/Dialog';
 
 export default function Clients() {
@@ -20,7 +21,7 @@ export default function Clients() {
     useEffect(() => { setClients(null); load(); }, [load]);
 
     if (error) return <div className="card danger">{error}</div>;
-    if (!clients) return <div className="card muted">Loading…</div>;
+    if (!clients) return <SkeletonTable rows={5} cols={6} />;
     return (
         <>
             <div className="toolbar"><span className="spacer" /><button className="btn btn-primary" onClick={() => setEditing('new')}>New client</button></div>

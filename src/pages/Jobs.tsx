@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ApiError } from '../api/client';
 import { jobsApi, type Job } from '../api/jobs';
 import { useAuth } from '../auth';
+import { SkeletonTable } from '../components/Skeleton';
 import Dialog, { SaveFooter } from '../components/Dialog';
 
 export default function Jobs() {
@@ -29,7 +30,7 @@ export default function Jobs() {
     }
 
     if (error) return <div className="card danger">{error}</div>;
-    if (!jobs) return <div className="card muted">Loading…</div>;
+    if (!jobs) return <SkeletonTable rows={5} cols={5} />;
     const list = jobs.filter(j => showArchived || !j.archived).sort((a, b) => Number(a.archived) - Number(b.archived) || a.name.localeCompare(b.name));
 
     return (

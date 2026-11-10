@@ -9,6 +9,7 @@ import { jobsApi, type Job } from '../api/jobs';
 import { money } from '../api/payroll';
 import { useAuth } from '../auth';
 import Dialog, { SaveFooter } from '../components/Dialog';
+import { SkeletonLines } from '../components/Skeleton';
 import { ClientDialog } from './Clients';
 
 type Line = { description: string; quantity: string; unit: string; unitPrice: string };
@@ -86,7 +87,7 @@ export default function InvoiceEditor({ invoiceId, copyOf, onClose, onDone }: { 
         <Dialog title={invoiceId ? 'Edit draft' : copyOf ? 'Copy of invoice' : 'New invoice'} wide onClose={onClose}
             subtitle="Saved as a draft. Leave the dates blank: they become the day you send it and the client's terms."
             footer={<SaveFooter onCancel={onClose} onSave={save} saving={saving} disabled={!loaded || clientId === ''} label={invoiceId ? 'Save' : 'Create draft'} />}>
-            {!loaded ? <p className="muted">Loading…</p> : (
+            {!loaded ? <SkeletonLines n={4} /> : (
                 <>
                     <div className="grid-2">
                         <label className="field"><span>Client</span>

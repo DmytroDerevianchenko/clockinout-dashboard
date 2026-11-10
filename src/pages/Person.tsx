@@ -7,9 +7,12 @@ import { Link, useParams } from 'react-router-dom';
 import { ApiError } from '../api/client';
 import { team, type RosterUser, money, dateOnly, dateTime, employmentLabel, statusLabel, num, PROVINCES } from '../api/team';
 import { useAuth } from '../auth';
+import { SkeletonRecord } from '../components/Skeleton';
 import Dialog, { SaveFooter } from '../components/Dialog';
 import { useRoster, ClockInDialog } from './Team';
 import BalanceDialog from '../components/BalanceDialog';
+import { useToast } from '../components/Toast';
+import { initialsOf } from '../layout/Shell';
 
 type Editor =
     | { kind: 'text'; field: string; label: string; value: string; type?: string }
@@ -31,7 +34,7 @@ export default function Person() {
     const { session, org } = useAuth();
     const { data, error, reload } = useRoster();
     const [editor, setEditor] = useState<Editor | null>(null);
-    const [flash, setFlash] = useState<string | null>(null);
+    const toast = useToast();
     const [owedRow, setOwedRow] = useState<{ owed: number } | null>(null);
     const [owedTick, setOwedTick] = useState(0);
     useEffect(() => {
@@ -47,13 +50,12 @@ export default function Person() {
     const save = useCallback(async (field: string, value: string) => {
         if (!session || !org || !user) return;
         try { await team.updateField(session.userId, org.organization_id, user.id, field, value); setEditor(null); await reload(); }
-        catch (e) { setFlash(e instanceof ApiError ? e.message : 'Could not save'); }
+        catch (e) { toast(e instanceof ApiError ? e.message : 'Could not save', 'error'); }
     }, [session, org, user, reload]);
 
-    useEffect(() => { if (flash) { const t = setTimeout(() => setFlash(null), 5000); return () => clearTimeout(t); } }, [flash]);
 
     if (error) return <div className="card danger">{error}</div>;
-    if (!data) return <div className="card muted">Loading…</div>;
+    if (!data) return <SkeletonRecord groups={3} rows={4} />;
     if (!user) return <div className="card">This person is not on the team. <Link to="/team">Back to Team</Link></div>;
 
     const text = (field: string, label: string, value: string | null | undefined, type?: string): Editor => ({ kind: 'text', field, label, value: value ?? '', type });
@@ -75,9 +77,12 @@ export default function Person() {
         <>
             <p><Link to="/team">‹ Team</Link></p>
             <div className="person-head">
-                <div>
-                    <h2 style={{ fontSize: 22 }}>{user.full_name} {self && <span className="pill">You</span>}</h2>
+                <div className="person-id">
+                    <div className={'avatar avatar-lg' + (user.is_clocked_in ? ' live' : '')} aria-hidden="true">{initialsOf(user.full_name || user.email)}</div>
+                    <div>
+                    <h2>{user.full_name}{self && <span className="pill">You</span>}{user.role === 'employer' ? <span className="pill">Owner</span> : user.is_admin ? <span className="pill">Admin</span> : null}{!user.joined && <span className="pill caution">Not joined</span>}</h2>
                     <div className="muted">{employmentLabel(user.employment_type)} · {statusLabel(user.status)}{user.is_clocked_in ? ` · On the clock${user.current_job_name ? ` at ${user.current_job_name}` : ''}` : ''}</div>
+                    </div>
                 </div>
                 <div className="head-actions">
                     {user.status === 'active' && (user.is_clocked_in
@@ -85,13 +90,35 @@ export default function Person() {
                         : <button className="btn" onClick={() => setEditor({ kind: 'clockin' })}>Clock in</button>)}
                     {!user.joined && session && org && (
                         <button className="btn" onClick={async () => {
-                            try { const r = await team.sendInvite(session.email, user.email, org.organization_id); setFlash(r.message ?? 'Invite sent'); }
-                            catch (e) { setFlash(e instanceof ApiError ? e.message : 'Could not send the invite'); }
+                            try { const r = await team.sendInvite(session.email, user.email, org.organization_id); toast(r.message ?? 'Invite sent'); }
+                            catch (e) { toast(e instanceof ApiError ? e.message : 'Could not send the invite', 'error'); }
                         }}>Send invite</button>
                     )}
                 </div>
             </div>
-            {flash && <p className="error-line">{flash}</p>}
+            {/* The three figures an employer looks for first; Balance opens its sheet. */}
+            <div className="cards person-stats">
+                <div className="card">
+                    <div className="stat-label">This week</div>
+                    <div className="stat stat-sm">{user.week_hours.toFixed(1)} h</div>
+                    {data.overtime?.enabled && data.overtime.threshold > 0 && (() => {
+                        const cap = data.overtime.threshold, over = user.week_hours >= cap, near = !over && user.week_hours >= cap * 0.9;
+                        return <div className={'week' + (over ? ' over' : near ? ' near' : '')}><div className="bar"><div style={{ width: `${Math.min(100, (user.week_hours / cap) * 100)}%` }} /></div><span>{over ? 'In overtime' : near ? 'Close to overtime' : `of ${cap} h`}</span></div>;
+                    })()}
+                </div>
+                <div className="card">
+                    <div className="stat-label">Rate</div>
+                    <div className="stat stat-sm">{user.current_rate != null ? `${money(user.current_rate)}/h` : '—'}</div>
+                    <div className="faint small">{employmentLabel(user.employment_type)}{num(user.salary_amount) > 0 ? ` · ${money(user.salary_amount)} a year` : ''}</div>
+                </div>
+                {user.role !== 'employer' && (
+                    <button type="button" className="card stat-link" onClick={() => setEditor({ kind: 'balance' })}>
+                        <div className="stat-label">Balance</div>
+                        <div className={'stat stat-sm' + (owedRow && owedRow.owed > 0.005 ? ' danger' : owedRow && owedRow.owed < -0.005 ? ' caution' : '')}>{owedRow ? money(Math.abs(owedRow.owed)) : '—'}</div>
+                        <div className="faint small">{!owedRow ? ' ' : Math.abs(owedRow.owed) < 0.005 ? 'Settled' : owedRow.owed > 0 ? 'You owe them' : 'They owe you'}</div>
+                    </button>
+                )}
+            </div>
 
             <div className="groups">
                 <section className="card card-flush">
@@ -148,13 +175,13 @@ export default function Person() {
             )}
             {editor?.kind === 'rate' && <RateDialog user={user} onClose={() => setEditor(null)} onSave={async (rate, salary) => { await save('current_rate', rate); if (salary !== undefined) await save('salary_amount', salary); }} />}
             {editor?.kind === 'balance' && <BalanceDialog userId={user.id} name={user.full_name} onClose={() => setEditor(null)} onChanged={() => setOwedTick(t => t + 1)} />}
-            {editor?.kind === 'tax' && <TaxProfileDialog user={user} onClose={() => setEditor(null)} onDone={() => { setEditor(null); reload(); }} onError={setFlash} />}
+            {editor?.kind === 'tax' && <TaxProfileDialog user={user} onClose={() => setEditor(null)} onDone={() => { setEditor(null); reload(); }} onError={m => toast(m, 'error')} />}
             {editor?.kind === 'clockin' && <ClockInDialog user={user} onClose={() => setEditor(null)} onDone={() => { setEditor(null); reload(); }} />}
             {editor?.kind === 'end' && session && org && (
                 <Dialog title={`End ${user.full_name}'s shift?`} onClose={() => setEditor(null)}
                     footer={<SaveFooter onCancel={() => setEditor(null)} label="End shift" onSave={async () => {
                         try { await team.endShift(session.userId, user.current_clock_in_id!, new Date().toISOString(), org.organization_id); setEditor(null); reload(); }
-                        catch (e) { setFlash(e instanceof ApiError ? e.message : 'Could not end the shift'); }
+                        catch (e) { toast(e instanceof ApiError ? e.message : 'Could not end the shift', 'error'); }
                     }} />}>
                     <p className="muted">The shift ends now; times can be adjusted on their hours afterwards.</p>
                 </Dialog>

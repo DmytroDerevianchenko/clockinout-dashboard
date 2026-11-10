@@ -9,6 +9,8 @@ import { jobsApi, type Job } from '../api/jobs';
 import { team, type RosterUser } from '../api/team';
 import { money, periodLabel } from '../api/payroll';
 import { useAuth } from '../auth';
+import { SkeletonTable } from '../components/Skeleton';
+import { useToast } from '../components/Toast';
 import Dialog, { SaveFooter } from '../components/Dialog';
 import CopyShiftsDialog from '../components/CopyShiftsDialog';
 
@@ -27,7 +29,7 @@ export default function Hours() {
     const [shifts, setShifts] = useState<Shift[] | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [edit, setEdit] = useState<{ kind: 'time'; shift: Shift; which: 'in' | 'out' } | { kind: 'note'; shift: Shift } | { kind: 'delete'; shift: Shift } | { kind: 'add' } | { kind: 'copy' } | null>(null);
-    const [flash, setFlash] = useState<string | null>(null);
+    const toast = useToast();
     const [busy, setBusy] = useState(false);
 
     // Periods for the year; default to the one containing today.
@@ -65,7 +67,7 @@ export default function Hours() {
 
     async function run(fn: () => Promise<unknown>) {
         setBusy(true); setError(null);
-        try { await fn(); setEdit(null); load(); }
+        try { await fn(); setEdit(null); toast('Saved'); load(); }
         catch (e) { setError(e instanceof ApiError ? e.message : 'Could not save'); }
         finally { setBusy(false); }
     }
@@ -94,18 +96,17 @@ export default function Hours() {
                     </select></label>
                 <span className="spacer" />
                 <button className="btn" onClick={() => setEdit({ kind: 'add' })}>Add shift</button>
-                <button className="btn" title="For someone who worked the same days as a coworker" onClick={() => { setFlash(null); setEdit({ kind: 'copy' }); }}>Copy shifts</button>
+                <button className="btn" title="For someone who worked the same days as a coworker" onClick={() => setEdit({ kind: 'copy' })}>Copy shifts</button>
                 <button className="btn" onClick={async () => {
                     if (!session || !org) return;
                     try { const r = await hoursApi.csv(session.userId, org.organization_id, { userFilterId: person || undefined, payPeriodId: periodId || undefined, jobId: jobId || undefined, year: periodId === '' ? year : undefined }); if (r.csv_url) window.open(r.csv_url, '_blank', 'noopener'); }
                     catch (e) { setError(e instanceof ApiError ? e.message : 'Could not export'); }
                 }}>Export CSV</button>
             </div>
-            {flash && <p className="muted">{flash}</p>}
             {error && <p className="error-line">{error}</p>}
             <div className="card card-flush">
                 <div className="eyebrow">{sel ? periodLabel(sel) : `${year}`} · {totals.hours.toFixed(1)} h · {money(totals.earned)}</div>
-                {!shifts ? <div className="empty">Loading…</div> : shifts.length === 0 ? <div className="empty">No shifts match.</div> : (
+                {!shifts ? <SkeletonTable bare rows={6} cols={7} /> : shifts.length === 0 ? <div className="empty">No shifts match.</div> : (
                     <table className="table table-hover">
                         <thead><tr><th>Day</th><th>Person</th><th>Job</th><th>In</th><th>Out</th><th>Break</th><th>Hours</th><th>Earned</th><th></th></tr></thead>
                         <tbody>
@@ -145,7 +146,7 @@ export default function Hours() {
             )}
             {edit?.kind === 'copy' && (
                 <CopyShiftsDialog people={people} defaultTarget={person || undefined} onClose={() => setEdit(null)}
-                    onDone={msg => { setEdit(null); setFlash(msg); load(); }} />
+                    onDone={msg => { setEdit(null); toast(msg); load(); }} />
             )}
             {edit?.kind === 'add' && session && org && (
                 <AddShiftDialog people={people} jobs={jobs.filter(j => !j.archived)} defaultPerson={person || undefined} busy={busy} onClose={() => setEdit(null)}

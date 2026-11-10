@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../auth';
+import ThemeSwitch from '../components/ThemeSwitch';
 
 // One stroke weight, one size, currentColor: the icons take the link's colour
 // (muted → ink on hover → the accent tint when active) with no extra rules.
@@ -57,6 +58,7 @@ export default function Shell() {
                         {n.phase && <span className="soon">soon</span>}
                     </NavLink>
                 ))}
+                <ThemeSwitch />
                 <div className="sidebar-foot">
                     <div className="avatar" aria-hidden="true">{initialsOf(who)}</div>
                     <div className="sidebar-who">
