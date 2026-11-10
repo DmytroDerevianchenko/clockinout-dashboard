@@ -209,3 +209,8 @@ tr.muted td { color: var(--ink-muted); }
     .sidebar-foot { margin: 0 0 0 auto; display: flex; align-items: center; }
     .main { padding: 16px; }
 }
+
+/* A table used as a checklist (Copy shifts): the whole row toggles; taken rows are quiet. */
+.row-pick { cursor: pointer; }
+.row-off td { color: var(--ink-faint); }
+.row-off td.caution { color: var(--caution); }

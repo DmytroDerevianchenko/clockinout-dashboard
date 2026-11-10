@@ -10,6 +10,7 @@ import { team, type RosterUser } from '../api/team';
 import { money, periodLabel } from '../api/payroll';
 import { useAuth } from '../auth';
 import Dialog, { SaveFooter } from '../components/Dialog';
+import CopyShiftsDialog from '../components/CopyShiftsDialog';
 
 const n = (v: unknown) => (v == null || v === '' ? 0 : Number(v));
 
@@ -25,7 +26,8 @@ export default function Hours() {
     const [jobs, setJobs] = useState<Job[]>([]);
     const [shifts, setShifts] = useState<Shift[] | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [edit, setEdit] = useState<{ kind: 'time'; shift: Shift; which: 'in' | 'out' } | { kind: 'note'; shift: Shift } | { kind: 'delete'; shift: Shift } | { kind: 'add' } | null>(null);
+    const [edit, setEdit] = useState<{ kind: 'time'; shift: Shift; which: 'in' | 'out' } | { kind: 'note'; shift: Shift } | { kind: 'delete'; shift: Shift } | { kind: 'add' } | { kind: 'copy' } | null>(null);
+    const [flash, setFlash] = useState<string | null>(null);
     const [busy, setBusy] = useState(false);
 
     // Periods for the year; default to the one containing today.
@@ -92,12 +94,14 @@ export default function Hours() {
                     </select></label>
                 <span className="spacer" />
                 <button className="btn" onClick={() => setEdit({ kind: 'add' })}>Add shift</button>
+                <button className="btn" title="For someone who worked the same days as a coworker" onClick={() => { setFlash(null); setEdit({ kind: 'copy' }); }}>Copy shifts</button>
                 <button className="btn" onClick={async () => {
                     if (!session || !org) return;
                     try { const r = await hoursApi.csv(session.userId, org.organization_id, { userFilterId: person || undefined, payPeriodId: periodId || undefined, jobId: jobId || undefined, year: periodId === '' ? year : undefined }); if (r.csv_url) window.open(r.csv_url, '_blank', 'noopener'); }
                     catch (e) { setError(e instanceof ApiError ? e.message : 'Could not export'); }
                 }}>Export CSV</button>
             </div>
+            {flash && <p className="muted">{flash}</p>}
             {error && <p className="error-line">{error}</p>}
             <div className="card card-flush">
                 <div className="eyebrow">{sel ? periodLabel(sel) : `${year}`} · {totals.hours.toFixed(1)} h · {money(totals.earned)}</div>
@@ -138,6 +142,10 @@ export default function Hours() {
                     footer={<SaveFooter onCancel={() => setEdit(null)} saving={busy} label="Delete" onSave={() => run(() => hoursApi.deleteShift(session.userId, edit.shift.in.id, edit.shift.out?.id ?? null))} />}>
                     <p className="muted">Deleting changes the period's hours; a calculated run recalculates on its next load.</p>
                 </Dialog>
+            )}
+            {edit?.kind === 'copy' && (
+                <CopyShiftsDialog people={people} defaultTarget={person || undefined} onClose={() => setEdit(null)}
+                    onDone={msg => { setEdit(null); setFlash(msg); load(); }} />
             )}
             {edit?.kind === 'add' && session && org && (
                 <AddShiftDialog people={people} jobs={jobs.filter(j => !j.archived)} defaultPerson={person || undefined} busy={busy} onClose={() => setEdit(null)}

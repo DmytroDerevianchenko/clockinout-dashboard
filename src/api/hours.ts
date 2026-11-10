@@ -12,6 +12,9 @@ export type ClockRow = {
 export type Shift = { user_id: number; user_name: string; job_id: number; job_name: string | null; in: ClockRow; out: ClockRow | null };
 
 export type PeriodLite = { id: number; start_date: string; end_date: string; status: string };
+// One of the source person's completed shifts, as /copy-shifts previews it.
+// conflict: null = can be copied; 'overlap' = the target already has a shift there.
+export type CopyCandidate = { clockInId: number; jobId: number; jobName: string; clockIn: string; clockOut: string; hours: number; breakMinutes: number; conflict: 'overlap' | 'job_deleted' | null };
 
 export const hoursApi = {
     rows: (userId: number, organizationId: number, f: { userFilterId?: number; payPeriodId?: number; jobId?: number; year?: number }) =>
@@ -21,6 +24,9 @@ export const hoursApi = {
     setTime: (userId: number, clockInId: number, newTime: string) => api('/update-clockin-time', { userId, clockInId, newTime }),
     addShift: (adminUserId: number, targetUserId: number, organizationId: number, jobId: number, clockInTime: string, clockOutTime: string, breakDuration: number) =>
         api('/add-shift', { adminUserId, targetUserId, organizationId, jobId, clockInTime, clockOutTime, breakDuration }),
+    // Re-create a coworker's completed shifts for another person; dryRun previews (nothing written).
+    copyShifts: (adminUserId: number, organizationId: number, p: { sourceUserId: number; targetUserId: number; from: string; to: string; clockInIds?: number[]; dryRun?: boolean }) =>
+        api<{ status: string; created: number; shifts: CopyCandidate[]; skipped?: { clockInId: number; reason: string }[] }>('/copy-shifts', { adminUserId, organizationId, ...p }),
     deleteShift: (userId: number, clockInId: number, clockOutId: number | null) => api('/delete-clockin-shift', { userId, clockInId, clockOutId }),
     addNote: (userId: number, clockInId: number, note: string) => api('/add-note', { userId, clockInId, note }),
     csv: (userId: number, organizationId: number, f: { userFilterId?: number; payPeriodId?: number; jobId?: number; year?: number }) =>
