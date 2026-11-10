@@ -63,7 +63,7 @@ export default function Login() {
     return (
         <div className="login-wrap">
             <form className="login-card" onSubmit={submit}>
-                <div className="brand"><div className="brand-mark">C</div><div className="brand-name">ClockInOut</div></div>
+                <div className="brand"><img className="brand-mark" src="/favicon.svg" alt="" /><div className="brand-name">ClockInOut</div></div>
                 <h2>Sign in</h2>
                 <p className="muted">The same account you use in the app.</p>
                 <label className="field"><span>Email</span>

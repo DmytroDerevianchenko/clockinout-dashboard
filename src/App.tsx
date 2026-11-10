@@ -1,5 +1,6 @@
 // Routes and the two gates: signed in, and allowed to manage the current
 // organization (employer or admin). Everyone else sees "use the app".
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth';
 import Shell from './layout/Shell';
@@ -15,8 +16,13 @@ import Clients from './pages/Clients';
 import Invoices from './pages/Invoices';
 import UseTheApp from './pages/UseTheApp';
 
+// The design kit on one page with made-up data — development builds only
+// (the dynamic import keeps it out of the production bundle's main chunk).
+const Styleguide = lazy(() => import('./pages/Styleguide'));
+
 function Gate() {
     const { session, canManage } = useAuth();
+    if (import.meta.env.DEV && window.location.pathname === '/styleguide') return <Suspense fallback={null}><Styleguide /></Suspense>;
     if (!session) return <Login />;
     if (!canManage) return <UseTheApp />;
     return (
