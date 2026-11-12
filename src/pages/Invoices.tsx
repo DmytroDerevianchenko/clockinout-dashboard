@@ -12,6 +12,7 @@ import { SkeletonTable } from '../components/Skeleton';
 import Dialog, { SaveFooter } from '../components/Dialog';
 import InvoiceEditor from './InvoiceEditor';
 import RowMenu from '../components/Menu';
+import { InvoiceStatsDialog } from '../components/StatsDialog';
 import { useToast } from '../components/Toast';
 
 export default function Invoices() {
@@ -24,6 +25,7 @@ export default function Invoices() {
     const [filter, setFilter] = useState<'all' | 'draft' | 'sent' | 'paid'>('all');
     const [showDeleted, setShowDeleted] = useState(false);
     const [paying, setPaying] = useState<InvoiceRow | null>(null);
+    const [stats, setStats] = useState(false);
     // Clients → "New invoice" lands here with the client already chosen.
     const location = useLocation();
     const forClient = (location.state as { newForClient?: number } | null)?.newForClient;
@@ -69,6 +71,7 @@ export default function Invoices() {
                 <label className="check"><input type="checkbox" checked={showDeleted} onChange={e => setShowDeleted(e.target.checked)} /> Show deleted</label>
                 <div className="muted small">Outstanding {money(outstanding)}</div>
                 <span className="spacer" />
+                <button className="btn" onClick={() => setStats(true)}>Statistics</button>
                 <button className="btn btn-primary" onClick={() => setEditor({})}>New invoice</button>
             </div>
             {error && <p className="error-line">{error}</p>}
@@ -113,6 +116,7 @@ export default function Invoices() {
                         : confirmAct.inv.status === 'draft' ? 'The draft is removed for good.' : 'The invoice leaves your lists and totals. It can be restored from the app (Invoices → deleted).'}</p>
                 </Dialog>
             )}
+            {stats && <InvoiceStatsDialog onClose={() => setStats(false)} />}
             {paying && <MarkPaidDialog invoice={paying} onClose={() => setPaying(null)} onDone={() => { setPaying(null); toast(`${paying.invoice_number} marked paid`); load(); }} />}
             {editor && <InvoiceEditor invoiceId={editor.invoiceId} copyOf={editor.copyOf} clientId={editor.clientId} onClose={() => setEditor(null)} onDone={() => { setEditor(null); load(); }} />}
             {confirmSend && (

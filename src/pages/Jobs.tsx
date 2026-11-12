@@ -8,6 +8,7 @@ import { useAuth } from '../auth';
 import { SkeletonTable } from '../components/Skeleton';
 import Dialog, { SaveFooter } from '../components/Dialog';
 import RowMenu from '../components/Menu';
+import { JobStatsDialog } from '../components/StatsDialog';
 import { useToast } from '../components/Toast';
 
 export default function Jobs() {
@@ -17,6 +18,7 @@ export default function Jobs() {
     const [showArchived, setShowArchived] = useState(false);
     const [editing, setEditing] = useState<Job | 'new' | null>(null);
     const [deleting, setDeleting] = useState<Job | null>(null);
+    const [statsFor, setStatsFor] = useState<number | null>(null);
     const [busy, setBusy] = useState(false);
     const toast = useToast();
 
@@ -69,6 +71,7 @@ export default function Jobs() {
                                     <button className="btn btn-sm" onClick={() => archive(j)}>{j.archived ? 'Unarchive' : 'Archive'}</button>
                                     <RowMenu items={[
                                         { label: 'View or edit details', onClick: () => setEditing(j) },
+                                        { label: 'Statistics', onClick: () => setStatsFor(j.id) },
                                         { label: 'Delete job', danger: true, onClick: () => setDeleting(j) },
                                     ]} />
                                 </td>
@@ -78,6 +81,7 @@ export default function Jobs() {
                     </tbody>
                 </table>
             </div>
+            {statsFor != null && <JobStatsDialog jobId={statsFor} onClose={() => setStatsFor(null)} />}
             {deleting && (
                 <Dialog title={`Delete ${deleting.name}?`} onClose={() => setDeleting(null)}
                     footer={<SaveFooter onCancel={() => setDeleting(null)} saving={busy} label="Delete" onSave={() => remove(deleting)} />}>

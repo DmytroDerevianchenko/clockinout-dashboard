@@ -10,6 +10,7 @@ import { team, type RosterUser } from '../api/team';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth';
 import RowMenu from '../components/Menu';
+import { PayrollStatsDialog } from '../components/StatsDialog';
 import { useToast } from '../components/Toast';
 import { SkeletonList } from '../components/Skeleton';
 import Dialog, { SaveFooter } from '../components/Dialog';
@@ -30,6 +31,7 @@ export default function Payroll() {
     const [busy, setBusy] = useState<string | null>(null);
     const [config, setConfig] = useState(false);
     const [editing, setEditing] = useState<{ period: PayPeriod; b: UserBalance; kind: 'edit' | 'pay' } | null>(null);
+    const [stats, setStats] = useState(false);
     const [rateFor, setRateFor] = useState<{ period: PayPeriod; b: UserBalance } | null>(null);
     const navigate = useNavigate();
     const toast = useToast();
@@ -110,6 +112,7 @@ export default function Payroll() {
                 </label>
                 <div className="muted small">Earned this year {money(data.earned)} · paid {money(data.paid)}</div>
                 <span className="spacer" />
+                <button className="btn" onClick={() => setStats(true)}>Statistics</button>
                 <button className="btn" onClick={() => setConfig(true)}>Configuration</button>
                 <button className="btn" disabled={busy === `csv-year-`} onClick={() => openPdf('csv')}>Export year CSV</button>
             </div>
@@ -194,6 +197,7 @@ export default function Payroll() {
                 onEdit={() => setEditing({ period: detail.period, b: detail.b, kind: 'edit' })}
                 onPay={() => setEditing({ period: detail.period, b: detail.b, kind: 'pay' })} />}
             {config && <PayrollConfigDialog onClose={() => setConfig(false)} onDone={() => { setConfig(false); reload(); }} />}
+            {stats && <PayrollStatsDialog onClose={() => setStats(false)} />}
             {rateFor && <PeriodRateDialog period={rateFor.period} b={rateFor.b} name={names.get(rateFor.b.userId)?.full_name ?? ''} onClose={() => setRateFor(null)}
                 onDone={() => { setRateFor(null); toast('Rate corrected for this period'); reload(); }} />}
             {editing?.kind === 'edit' && <EditPayrollDialog period={editing.period} b={editing.b} name={names.get(editing.b.userId)?.full_name ?? ''} onClose={() => setEditing(null)} onDone={() => { setEditing(null); reload(); }} />}

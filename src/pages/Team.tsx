@@ -11,6 +11,7 @@ import Dialog, { SaveFooter } from '../components/Dialog';
 import AddMemberDialog from '../components/AddMemberDialog';
 import MemberActionDialog, { type MemberAction } from '../components/MemberActionDialog';
 import RowMenu from '../components/Menu';
+import { TeamStatsDialog } from '../components/StatsDialog';
 import { useToast } from '../components/Toast';
 
 export function useRoster() {
@@ -39,6 +40,7 @@ export default function Team() {
     const [endFor, setEndFor] = useState<RosterUser | null>(null);
     const [adding, setAdding] = useState(false);
     const [busy, setBusy] = useState<number | null>(null);
+    const [stats, setStats] = useState(false);
     const [memberAction, setMemberAction] = useState<{ user: RosterUser; action: MemberAction } | null>(null);
     const navigate = useNavigate();
     const toast = useToast();
@@ -81,6 +83,7 @@ export default function Team() {
                 <input className="search" placeholder="Search by name or email" value={q} onChange={e => setQ(e.target.value)} />
                 <label className="check"><input type="checkbox" checked={showTerminated} onChange={e => setShowTerminated(e.target.checked)} /> Show terminated</label>
                 <span className="spacer" />
+                <button className="btn" onClick={() => setStats(true)}>Statistics</button>
                 <button className="btn btn-primary" onClick={() => setAdding(true)}>Add member</button>
             </div>
             {actionError && <p className="error-line">{actionError}</p>}
@@ -155,6 +158,7 @@ export default function Team() {
                     <p className="muted">You can adjust the times afterwards on their hours.</p>
                 </Dialog>
             )}
+            {stats && <TeamStatsDialog onClose={() => setStats(false)} />}
             {memberAction && <MemberActionDialog user={memberAction.user} action={memberAction.action} onClose={() => setMemberAction(null)}
                 onDone={msg => { setMemberAction(null); toast(msg); reload(); }} />}
             {adding && <AddMemberDialog onClose={() => setAdding(false)} onDone={() => { setAdding(false); reload(); }} />}

@@ -10,6 +10,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../auth';
 import Dialog, { SaveFooter } from '../components/Dialog';
 import RowMenu from '../components/Menu';
+import { PaymentStatsDialog } from '../components/StatsDialog';
 import { SkeletonTable } from '../components/Skeleton';
 import { useToast } from '../components/Toast';
 
@@ -23,6 +24,7 @@ export default function Payments() {
     const [params] = useSearchParams();                    // Payroll links here as ?person=12
     const [person, setPerson] = useState<number | ''>(() => Number(params.get('person')) || '');
     const [editing, setEditing] = useState<Payment | null>(null);
+    const [stats, setStats] = useState(false);
     const [showDeleted, setShowDeleted] = useState(false);
     const [confirm, setConfirm] = useState<Payment | null>(null);
     const [busy, setBusy] = useState(false);
@@ -57,6 +59,7 @@ export default function Payments() {
                     <select value={person} onChange={e => setPerson(e.target.value === '' ? '' : Number(e.target.value))}><option value="">Everyone</option>{people.map(([id, name]) => <option key={id} value={id}>{name}</option>)}</select></label>
                 <label className="check"><input type="checkbox" checked={showDeleted} onChange={e => setShowDeleted(e.target.checked)} /> Show deleted</label>
                 <span className="spacer" />
+                <button className="btn" onClick={() => setStats(true)}>Statistics</button>
                 <button className="btn" onClick={async () => {
                     if (!session || !org) return;
                     try { const r = await paymentsApi.csv(session.userId, org.organization_id, year === '' ? undefined : year); if (r.csv_url) window.open(r.csv_url, '_blank', 'noopener'); }
@@ -93,6 +96,7 @@ export default function Payments() {
                     </table>
                 )}
             </div>
+            {stats && <PaymentStatsDialog onClose={() => setStats(false)} />}
             {editing && <EditPaymentDialog payment={editing} onClose={() => setEditing(null)} onDone={() => { setEditing(null); toast('Payment saved'); load(); }} />}
             {confirm && session && org && (
                 <Dialog title={`Delete this payment of ${money(confirm.amount_paid)}?`} subtitle={`${confirm.user_name}, ${dateOnly(confirm.payment_date)}.`} onClose={() => setConfirm(null)}
