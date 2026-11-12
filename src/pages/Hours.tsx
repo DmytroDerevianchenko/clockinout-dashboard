@@ -16,6 +16,7 @@ import Dialog, { SaveFooter } from '../components/Dialog';
 import CopyShiftsDialog from '../components/CopyShiftsDialog';
 import EditShiftDialog from '../components/EditShiftDialog';
 import RowMenu from '../components/Menu';
+import RouteMapDialog from '../components/RouteMapDialog';
 
 const n = (v: unknown) => (v == null || v === '' ? 0 : Number(v));
 
@@ -33,7 +34,7 @@ export default function Hours() {
     const [jobs, setJobs] = useState<Job[]>([]);
     const [shifts, setShifts] = useState<Shift[] | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [edit, setEdit] = useState<{ kind: 'shift'; shift: Shift } | { kind: 'end'; shift: Shift } | { kind: 'note'; shift: Shift } | { kind: 'delete'; shift: Shift } | { kind: 'add' } | { kind: 'copy' } | null>(null);
+    const [edit, setEdit] = useState<{ kind: 'shift'; shift: Shift } | { kind: 'end'; shift: Shift } | { kind: 'map'; shift: Shift } | { kind: 'note'; shift: Shift } | { kind: 'delete'; shift: Shift } | { kind: 'add' } | { kind: 'copy' } | null>(null);
     const toast = useToast();
     const [busy, setBusy] = useState(false);
 
@@ -130,6 +131,7 @@ export default function Hours() {
                                         <button className="btn btn-sm" onClick={() => setEdit({ kind: 'shift', shift: s })}>Edit</button>
                                         <RowMenu items={[
                                             { label: (s.in.note || s.out?.note) ? 'Edit note' : 'Add a note', onClick: () => setEdit({ kind: 'note', shift: s }) },
+                                            { label: 'Route map', onClick: () => setEdit({ kind: 'map', shift: s }) },
                                             !s.out && { label: 'End shift now', onClick: () => setEdit({ kind: 'end', shift: s }) },
                                             { label: 'Delete shift', danger: true, onClick: () => setEdit({ kind: 'delete', shift: s }) },
                                         ]} />
@@ -141,6 +143,7 @@ export default function Hours() {
                 )}
             </div>
 
+            {edit?.kind === 'map' && <RouteMapDialog shift={edit.shift} job={jobs.find(j => j.id === edit.shift.job_id)} onClose={() => setEdit(null)} />}
             {edit?.kind === 'shift' && (
                 <EditShiftDialog shift={edit.shift} jobs={jobs} onClose={() => setEdit(null)} onChanged={load}
                     onDone={msg => { setEdit(null); toast(msg); load(); }} />

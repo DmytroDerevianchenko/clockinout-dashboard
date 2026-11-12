@@ -7,6 +7,7 @@ import { money } from '../api/payroll';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth';
 import RowMenu from '../components/Menu';
+import AddressSearch from '../components/AddressSearch';
 import { useToast } from '../components/Toast';
 import { SkeletonTable } from '../components/Skeleton';
 import Dialog, { SaveFooter } from '../components/Dialog';
@@ -115,6 +116,7 @@ export function ClientDialog({ client, onClose, onDone }: { client: Client | nul
     }
     return (
         <Dialog title={client ? client.company_name : 'New client'} wide onClose={onClose} footer={<SaveFooter onCancel={onClose} onSave={save} saving={saving} disabled={!f.companyName.trim()} />}>
+            <AddressSearch placeholder="Search for the client's address (fills the fields below)" onPick={a => setF(v => ({ ...v, street: a.street, city: a.city, stateProvince: a.province, postalCode: a.postalCode, countryCode: a.countryCode }))} />
             <div className="grid-2">
                 <label className="field"><span>Company</span><input value={f.companyName} onChange={set('companyName')} autoFocus /></label>
                 <label className="field"><span>Contact name</span><input value={f.contactName} onChange={set('contactName')} /></label>

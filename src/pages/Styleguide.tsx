@@ -7,6 +7,8 @@ import { NAV, NAV_ICONS, initialsOf } from '../layout/Shell';
 import Dialog, { SaveFooter } from '../components/Dialog';
 import ThemeSwitch from '../components/ThemeSwitch';
 import RowMenu from '../components/Menu';
+import AddressSearch, { type FoundAddress } from '../components/AddressSearch';
+import MapView from '../components/MapView';
 import { useToast } from '../components/Toast';
 import { SkeletonCards, SkeletonList, SkeletonRecord, SkeletonTable } from '../components/Skeleton';
 
@@ -27,6 +29,8 @@ export default function Styleguide() {
     const toast = useToast();
     const [dialog, setDialog] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [found, setFound] = useState<FoundAddress | null>(null);
+    const [pin, setPin] = useState({ lat: 43.6712, lon: -79.4489 });
     const [active, setActive] = useState('/');
     return (
         <div className="shell">
@@ -45,6 +49,17 @@ export default function Styleguide() {
                 <div className="topbar">
                     <h1>Demo Crew Ontario</h1>
                     <label className="org-switch"><select defaultValue="1"><option value="1">Demo Crew Ontario</option><option value="2">Demo Crew West</option></select></label>
+                </div>
+
+                {/* ── Maps ── */}
+                <div className="card" style={{ marginBottom: 14 }}>
+                    <h2>Address search and map</h2>
+                    <AddressSearch onPick={a => { setFound(a); setPin({ lat: a.lat, lon: a.lon }); }} />
+                    <p className="muted small" id="found">{found ? `${found.label} · ${found.postalCode} · ${found.lat.toFixed(5)}, ${found.lon.toFixed(5)}` : 'Nothing picked yet.'}</p>
+                    <MapView height={260} onPick={(lat, lon) => setPin({ lat, lon })}
+                        points={[{ lat: pin.lat, lon: pin.lon, kind: 'job', label: 'Job site' }, { lat: pin.lat + 0.0006, lon: pin.lon - 0.0009, kind: 'in', label: 'Clock in' }, { lat: pin.lat + 0.0002, lon: pin.lon + 0.0004, kind: 'ping' }, { lat: pin.lat - 0.0011, lon: pin.lon + 0.0019, kind: 'outside' }, { lat: pin.lat - 0.0003, lon: pin.lon + 0.0008, kind: 'out', label: 'Clock out' }]}
+                        path={[[pin.lat + 0.0006, pin.lon - 0.0009], [pin.lat + 0.0002, pin.lon + 0.0004], [pin.lat - 0.0011, pin.lon + 0.0019], [pin.lat - 0.0003, pin.lon + 0.0008]]}
+                        circle={{ lat: pin.lat, lon: pin.lon, radius: 100 }} />
                 </div>
 
                 {/* ── Home ── */}

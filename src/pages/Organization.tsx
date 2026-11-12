@@ -8,6 +8,7 @@ import { useAuth } from '../auth';
 import { SkeletonRecord } from '../components/Skeleton';
 import Dialog, { SaveFooter } from '../components/Dialog';
 import { OrgList, OrgLogo } from '../components/OrgManagement';
+import AddressSearch from '../components/AddressSearch';
 
 export default function Organization() {
     const { session, org } = useAuth();
@@ -121,6 +122,7 @@ function DetailsDialog({ row, onClose, onDone }: { row: OrgRow; onClose: () => v
         <Dialog title="Organization details" wide onClose={onClose} footer={<SaveFooter onCancel={onClose} onSave={save} saving={saving} disabled={!f.name.trim()} />}
             subtitle="The province decides taxes, overtime and holiday pay for everyone; pay period type and start day are changed on the phone.">
             <label className="field"><span>Name</span><input value={f.name} onChange={set('name')} /></label>
+            <AddressSearch placeholder="Search for the address (fills the fields below)" onPick={a => setF(v => ({ ...v, street: a.street, city: a.city, province: a.province, postal: a.postalCode, country: a.countryCode }))} />
             <div className="grid-2">
                 <label className="field"><span>Street</span><input value={f.street} onChange={set('street')} /></label>
                 <label className="field"><span>Unit</span><input value={f.unit} onChange={set('unit')} /></label>

@@ -8,6 +8,8 @@ import { useAuth } from '../auth';
 import { SkeletonTable } from '../components/Skeleton';
 import Dialog, { SaveFooter } from '../components/Dialog';
 import RowMenu from '../components/Menu';
+import AddressSearch from '../components/AddressSearch';
+import MapView from '../components/MapView';
 import { JobStatsDialog } from '../components/StatsDialog';
 import { useToast } from '../components/Toast';
 
@@ -64,7 +66,7 @@ export default function Jobs() {
                                 <td><button className="row-link linkish" onClick={() => setEditing(j)}><strong>{j.name}</strong></button>
                                     {j.archived && <span className="pill">Archived</span>}
                                     {j.description && <div className="faint small">{j.description}</div>}</td>
-                                <td>{j.address ?? <span className="faint">—</span>}{j.latitude == null && <div className="faint small">No pin — set the address on the phone to place one</div>}</td>
+                                <td>{j.address ?? <span className="faint">—</span>}{j.latitude == null && <div className="faint small">No pin yet — open the job and search its address</div>}</td>
                                 <td>{j.geofence_enabled ? `On · ${j.geofence_radius ?? 100} m` : <span className="faint">Off</span>}</td>
                                 <td>{Array.isArray(j.active_workers) ? j.active_workers.length : (j.active_workers ?? 0)}</td>
                                 <td className="actions">
@@ -103,20 +105,24 @@ function JobDialog({ job, onClose, onDone }: { job: Job | null; onClose: () => v
     const [radius, setRadius] = useState(String(job?.geofence_radius ?? 100));
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const hasPin = job?.latitude != null && job?.longitude != null;
+    // The pin: from the phone, from the address search here, or a click on the map.
+    const [pin, setPin] = useState<{ lat: number; lon: number } | null>(job?.latitude != null && job?.longitude != null ? { lat: Number(job.latitude), lon: Number(job.longitude) } : null);
+    const hasPin = !!pin;
+    const pinMoved = !!pin && (job?.latitude == null || Math.abs(Number(job.latitude) - pin.lat) > 1e-7 || Math.abs(Number(job.longitude) - pin.lon) > 1e-7);
 
     async function save() {
         if (!session || !org) return;
         setSaving(true); setError(null);
         try {
             if (!job) {
-                await jobsApi.create(session.userId, org.organization_id, { name: name.trim(), address: address.trim() || null, description: description.trim() || null });
+                await jobsApi.create(session.userId, org.organization_id, { name: name.trim(), address: address.trim() || null, description: description.trim() || null, latitude: pin?.lat ?? null, longitude: pin?.lon ?? null });
             } else {
                 const u = (field: string, v: string) => jobsApi.update(session.userId, org.organization_id, job.id, field, v);
                 if (name.trim() !== job.name) await u('name', name.trim());
                 if ((address.trim()) !== (job.address ?? '')) await u('address', address.trim());
                 if ((description.trim()) !== (job.description ?? '')) await u('description', description.trim());
-                if (hasPin && (fenceOn !== (job.geofence_enabled === true) || String(job.geofence_radius ?? 100) !== radius)) {
+                if (pinMoved && pin) { await u('latitude', String(pin.lat)); await u('longitude', String(pin.lon)); }
+                if (hasPin && (fenceOn !== (job.geofence_enabled === true) || String(job.geofence_radius ?? 100) !== radius)) {   // after the pin is saved
                     await jobsApi.setGeofence(session.userId, org.organization_id, job.id, fenceOn, parseInt(radius) || 100);
                 }
             }
@@ -125,10 +131,18 @@ function JobDialog({ job, onClose, onDone }: { job: Job | null; onClose: () => v
     }
 
     return (
-        <Dialog title={job ? job.name : 'New job'} onClose={onClose} footer={<SaveFooter onCancel={onClose} onSave={save} saving={saving} disabled={!name.trim()} />}>
+        <Dialog title={job ? job.name : 'New job'} wide onClose={onClose} footer={<SaveFooter onCancel={onClose} onSave={save} saving={saving} disabled={!name.trim()} />}>
             <label className="field"><span>Name</span><input value={name} onChange={e => setName(e.target.value)} autoFocus /></label>
-            <label className="field"><span>Address</span><input value={address} onChange={e => setAddress(e.target.value)} placeholder="Street, city, province" />
-                <small className="muted">{hasPin ? 'This job has a map pin from the phone; changing the text here keeps the pin.' : 'Typed here it is a label; placing the pin for the geofence needs the phone’s address search for now.'}</small></label>
+            <div className="field"><span>Address</span>
+                {/* Pick a real address: it fills the text AND places the pin the geofence and the route map need. */}
+                <AddressSearch placeholder="Search for the site's address" onPick={a => { setAddress([a.street, a.city, a.province, a.postalCode].filter(Boolean).join(', ')); setPin({ lat: a.lat, lon: a.lon }); }} />
+                <input value={address} onChange={e => setAddress(e.target.value)} placeholder="Street, city, province" />
+                <small className="muted">{hasPin ? 'Click the map to move the pin to the exact spot.' : 'Search above to place the pin, or click the map. Without a pin the job cannot be geofenced.'}</small>
+            </div>
+            <MapView height={220} points={pin ? [{ lat: pin.lat, lon: pin.lon, kind: 'job', label: name || 'Job site' }] : []}
+                circle={pin && fenceOn ? { lat: pin.lat, lon: pin.lon, radius: parseInt(radius) || 100 } : undefined}
+                onPick={(lat, lon) => setPin({ lat, lon })} />
+            <div style={{ height: 12 }} />
             <label className="field"><span>Description</span><textarea rows={3} value={description} onChange={e => setDescription(e.target.value)} /></label>
             {hasPin && (
                 <>
