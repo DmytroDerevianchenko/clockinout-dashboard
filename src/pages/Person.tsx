@@ -3,7 +3,7 @@
 // person has claimed their account (they edit it themselves); employment
 // facts are the employer's; your own row cannot be terminated here.
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ApiError } from '../api/client';
 import { team, type RosterUser, money, dateOnly, dateTime, employmentLabel, statusLabel, num, PROVINCES } from '../api/team';
 import { useAuth } from '../auth';
@@ -11,12 +11,13 @@ import { SkeletonRecord } from '../components/Skeleton';
 import Dialog, { SaveFooter } from '../components/Dialog';
 import { useRoster, ClockInDialog } from './Team';
 import BalanceDialog from '../components/BalanceDialog';
+import MemberActionDialog, { type MemberAction } from '../components/MemberActionDialog';
 import { useToast } from '../components/Toast';
 import { initialsOf } from '../layout/Shell';
 
 type Editor =
     | { kind: 'text'; field: string; label: string; value: string; type?: string }
-    | { kind: 'status' } | { kind: 'type' } | { kind: 'rate' } | { kind: 'tax' } | { kind: 'jurisdiction' } | { kind: 'clockin' } | { kind: 'end' } | { kind: 'balance' };
+    | { kind: 'status' } | { kind: 'type' } | { kind: 'rate' } | { kind: 'tax' } | { kind: 'jurisdiction' } | { kind: 'clockin' } | { kind: 'end' } | { kind: 'balance' } | { kind: 'member'; action: MemberAction };
 
 function Row({ label, value, placeholder, onClick, locked, tone }: { label: string; value?: ReactNode; placeholder?: string; onClick?: () => void; locked?: boolean; tone?: 'caution' | 'danger' }) {
     const empty = value === undefined || value === null || value === '';
@@ -35,6 +36,7 @@ export default function Person() {
     const { data, error, reload } = useRoster();
     const [editor, setEditor] = useState<Editor | null>(null);
     const toast = useToast();
+    const navigate = useNavigate();
     const [owedRow, setOwedRow] = useState<{ owed: number } | null>(null);
     const [owedTick, setOwedTick] = useState(0);
     useEffect(() => {
@@ -161,6 +163,18 @@ export default function Person() {
                 </section>
             </div>
 
+            {/* The exits, apart from everything else — as on the phone's record. Never for yourself or the owner. */}
+            {!self && user.role !== 'employer' && (
+                <div className="danger-zone">
+                    {user.status === 'terminated' || user.status === 'inactive'
+                        ? <button className="btn" onClick={() => setEditor({ kind: 'member', action: 'reactivate' })}>Reactivate</button>
+                        : <button className="btn" onClick={() => setEditor({ kind: 'member', action: 'terminate' })}>Terminate</button>}
+                    <button className="btn btn-danger" onClick={() => setEditor({ kind: 'member', action: 'delete' })}>Delete employee</button>
+                </div>
+            )}
+
+            {editor?.kind === 'member' && <MemberActionDialog user={user} action={editor.action} onClose={() => setEditor(null)}
+                onDone={msg => { const gone = editor.action === 'delete'; setEditor(null); toast(msg); if (gone) navigate('/team'); else reload(); }} />}
             {editor?.kind === 'text' && <TextDialog ed={editor} onClose={() => setEditor(null)} onSave={save} />}
             {editor?.kind === 'status' && (
                 <ChoiceDialog title="Status" options={[['active', 'Active'], ['inactive', 'Inactive'], ['terminated', 'Terminated']]} current={user.status} onClose={() => setEditor(null)} onPick={v => save('status', v)} />

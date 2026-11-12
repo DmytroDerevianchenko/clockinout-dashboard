@@ -10,6 +10,8 @@ import { useAuth } from '../auth';
 import { SkeletonTable } from '../components/Skeleton';
 import Dialog, { SaveFooter } from '../components/Dialog';
 import InvoiceEditor from './InvoiceEditor';
+import RowMenu from '../components/Menu';
+import { useToast } from '../components/Toast';
 
 export default function Invoices() {
     const { session, org } = useAuth();
@@ -27,7 +29,9 @@ export default function Invoices() {
     }, [session, org]);
     useEffect(() => { setInvoices(null); load(); }, [load]);
 
-    async function act(inv: InvoiceRow, kind: 'pdf' | 'send' | 'paid' | 'unpaid' | 'delete') {
+    const toast = useToast();
+    const [confirmAct, setConfirmAct] = useState<{ inv: InvoiceRow; kind: 'cancel' | 'delete' } | null>(null);
+    async function act(inv: InvoiceRow, kind: 'pdf' | 'send' | 'paid' | 'unpaid' | 'delete' | 'marksent' | 'cancel') {
         if (!session || !org) return;
         setBusy(`${kind}-${inv.id}`); setError(null);
         try {
@@ -35,7 +39,10 @@ export default function Invoices() {
             else if (kind === 'send') { await orgApi.sendInvoice(session.userId, org.organization_id, inv.id); setConfirmSend(null); load(); }
             else if (kind === 'paid') { await orgApi.setInvoiceStatus(session.userId, org.organization_id, inv.id, 'paid', 'e-transfer', new Date().toISOString().slice(0, 10)); load(); }
             else if (kind === 'unpaid') { await orgApi.setInvoiceStatus(session.userId, org.organization_id, inv.id, 'sent'); load(); }
-            else { await invoicesApi.remove(session.userId, org.organization_id, inv.id); load(); }
+            // Handed over on paper or sent from your own mail: sent, with no email from here.
+            else if (kind === 'marksent') { await orgApi.setInvoiceStatus(session.userId, org.organization_id, inv.id, 'sent'); toast(`${inv.invoice_number} marked as sent`); load(); }
+            else if (kind === 'cancel') { await orgApi.setInvoiceStatus(session.userId, org.organization_id, inv.id, 'cancelled'); setConfirmAct(null); toast(`${inv.invoice_number} cancelled`); load(); }
+            else { await invoicesApi.remove(session.userId, org.organization_id, inv.id); setConfirmAct(null); toast(`${inv.invoice_number} deleted`); load(); }
         } catch (e) { setError(e instanceof ApiError ? e.message : 'Could not do that'); }
         finally { setBusy(null); }
     }
@@ -64,7 +71,7 @@ export default function Invoices() {
                         <tbody>
                             {list.map(i => (
                                 <tr key={i.id}>
-                                    <td>{i.status === 'draft' ? <button className="row-link linkish" onClick={() => setEditor({ invoiceId: i.id })}><strong>{i.invoice_number}</strong></button> : <strong>{i.invoice_number}</strong>}{i.is_opening && <span className="pill" title="A balance carried forward from before the app">Carried forward</span>}</td>
+                                    <td>{(i.status === 'draft' || i.status === 'sent') ? <button className="row-link linkish" title="Edit" onClick={() => setEditor({ invoiceId: i.id })}><strong>{i.invoice_number}</strong></button> : <strong>{i.invoice_number}</strong>}{i.is_opening && <span className="pill" title="A balance carried forward from before the app">Carried forward</span>}</td>
                                     <td>{i.client_name ?? '—'}</td>
                                     <td>{i.job_name ?? <span className="faint">—</span>}</td>
                                     <td>{i.status === 'draft' ? <span className="faint">on send</span> : dateOnly(i.issue_date)}</td>
@@ -76,8 +83,13 @@ export default function Invoices() {
                                         {(i.status === 'draft' || i.status === 'sent') && <button className="btn btn-sm" onClick={() => setConfirmSend(i)}>{i.status === 'draft' ? 'Send' : 'Resend'}</button>}
                                         {i.status === 'sent' && <button className="btn btn-sm" disabled={busy === `paid-${i.id}`} onClick={() => act(i, 'paid')}>Mark paid</button>}
                                         {i.status === 'paid' && <button className="btn btn-sm" disabled={busy === `unpaid-${i.id}`} onClick={() => act(i, 'unpaid')}>Mark unpaid</button>}
-                                        <button className="btn btn-sm" onClick={() => setEditor({ copyOf: i.id })}>Copy</button>
-                                        {i.status === 'draft' && <button className="btn btn-sm" disabled={busy === `delete-${i.id}`} onClick={() => { if (confirm(`Delete draft ${i.invoice_number}?`)) act(i, 'delete'); }}>Delete</button>}
+                                        <RowMenu items={[
+                                            (i.status === 'draft' || i.status === 'sent') && { label: 'Edit', onClick: () => setEditor({ invoiceId: i.id }) },
+                                            { label: 'Duplicate', onClick: () => setEditor({ copyOf: i.id }) },
+                                            i.status === 'draft' && { label: 'Mark as sent (no email)', onClick: () => act(i, 'marksent') },
+                                            i.status !== 'cancelled' && i.status !== 'paid' && { label: 'Cancel invoice', danger: true, onClick: () => setConfirmAct({ inv: i, kind: 'cancel' }) },
+                                            { label: i.status === 'draft' ? 'Delete draft' : 'Delete', danger: true, onClick: () => setConfirmAct({ inv: i, kind: 'delete' }) },
+                                        ]} />
                                     </td>
                                 </tr>
                             ))}
@@ -85,6 +97,14 @@ export default function Invoices() {
                     </table>
                 )}
             </div>
+            {confirmAct && (
+                <Dialog title={confirmAct.kind === 'cancel' ? `Cancel ${confirmAct.inv.invoice_number}?` : `Delete ${confirmAct.inv.invoice_number}?`} onClose={() => setConfirmAct(null)}
+                    footer={<SaveFooter onCancel={() => setConfirmAct(null)} saving={busy === `${confirmAct.kind}-${confirmAct.inv.id}`} label={confirmAct.kind === 'cancel' ? 'Cancel invoice' : 'Delete'} onSave={() => act(confirmAct.inv, confirmAct.kind)} />}>
+                    <p className="muted">{confirmAct.kind === 'cancel'
+                        ? `A cancelled invoice is void: it can't be edited or sent, and its PDF prints with a CANCELLED line. The number ${confirmAct.inv.invoice_number} is never reused.`
+                        : confirmAct.inv.status === 'draft' ? 'The draft is removed for good.' : 'The invoice leaves your lists and totals. It can be restored from the app (Invoices → deleted).'}</p>
+                </Dialog>
+            )}
             {editor && <InvoiceEditor invoiceId={editor.invoiceId} copyOf={editor.copyOf} onClose={() => setEditor(null)} onDone={() => { setEditor(null); load(); }} />}
             {confirmSend && (
                 <Dialog title={`Send ${confirmSend.invoice_number}?`} subtitle={`${money(confirmSend.total)} to ${confirmSend.client_name ?? 'the client'}. ${confirmSend.status === 'draft' ? 'The issue and due dates become today and the client’s terms.' : 'The client receives the PDF again.'}`} onClose={() => setConfirmSend(null)}

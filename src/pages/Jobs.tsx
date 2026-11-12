@@ -7,6 +7,8 @@ import { jobsApi, type Job } from '../api/jobs';
 import { useAuth } from '../auth';
 import { SkeletonTable } from '../components/Skeleton';
 import Dialog, { SaveFooter } from '../components/Dialog';
+import RowMenu from '../components/Menu';
+import { useToast } from '../components/Toast';
 
 export default function Jobs() {
     const { session, org } = useAuth();
@@ -14,6 +16,17 @@ export default function Jobs() {
     const [error, setError] = useState<string | null>(null);
     const [showArchived, setShowArchived] = useState(false);
     const [editing, setEditing] = useState<Job | 'new' | null>(null);
+    const [deleting, setDeleting] = useState<Job | null>(null);
+    const [busy, setBusy] = useState(false);
+    const toast = useToast();
+
+    async function remove(j: Job) {
+        if (!session) return;
+        setBusy(true);
+        try { await jobsApi.remove(session.userId, j.id); setDeleting(null); toast(`${j.name} was deleted`); load(); }
+        catch (e) { toast(e instanceof ApiError ? e.message : 'Could not delete the job', 'error'); }
+        finally { setBusy(false); }
+    }
 
     const load = useCallback(() => {
         if (!session || !org) return;
@@ -52,13 +65,26 @@ export default function Jobs() {
                                 <td>{j.address ?? <span className="faint">—</span>}{j.latitude == null && <div className="faint small">No pin — set the address on the phone to place one</div>}</td>
                                 <td>{j.geofence_enabled ? `On · ${j.geofence_radius ?? 100} m` : <span className="faint">Off</span>}</td>
                                 <td>{Array.isArray(j.active_workers) ? j.active_workers.length : (j.active_workers ?? 0)}</td>
-                                <td className="actions"><button className="btn btn-sm" onClick={() => archive(j)}>{j.archived ? 'Unarchive' : 'Archive'}</button></td>
+                                <td className="actions">
+                                    <button className="btn btn-sm" onClick={() => archive(j)}>{j.archived ? 'Unarchive' : 'Archive'}</button>
+                                    <RowMenu items={[
+                                        { label: 'View or edit details', onClick: () => setEditing(j) },
+                                        { label: 'Delete job', danger: true, onClick: () => setDeleting(j) },
+                                    ]} />
+                                </td>
                             </tr>
                         ))}
                         {list.length === 0 && <tr><td colSpan={5} className="empty">No jobs yet.</td></tr>}
                     </tbody>
                 </table>
             </div>
+            {deleting && (
+                <Dialog title={`Delete ${deleting.name}?`} onClose={() => setDeleting(null)}
+                    footer={<SaveFooter onCancel={() => setDeleting(null)} saving={busy} label="Delete" onSave={() => remove(deleting)} />}>
+                    <p className="muted">This deletes the job and all of its clock-in history: every recorded shift on this job is removed, and hours from those shifts disappear from unpaid payroll. This cannot be undone here.</p>
+                    <p className="muted">To retire the job but keep its history, use Archive instead.</p>
+                </Dialog>
+            )}
             {editing && <JobDialog job={editing === 'new' ? null : editing} onClose={() => setEditing(null)} onDone={() => { setEditing(null); load(); }} />}
         </>
     );

@@ -22,6 +22,9 @@ export const hoursApi = {
     periods: (organizationId: number, year: number) =>
         apiGet<{ status: string; payPeriods: PeriodLite[] }>('/pay-periods-list', { organizationId, year }),
     setTime: (userId: number, clockInId: number, newTime: string) => api('/update-clockin-time', { userId, clockInId, newTime }),
+    // Completed shifts: the break taken, and the job the shift belongs to.
+    setBreak: (userId: number, clockOutId: number, breakDuration: number) => api('/update-break-duration', { userId, clockOutId, breakDuration }),
+    setJob: (userId: number, clockInId: number, jobId: number) => api<{ status: string; jobName?: string; changed?: boolean }>('/update-shift-job', { userId, clockInId, jobId }),
     addShift: (adminUserId: number, targetUserId: number, organizationId: number, jobId: number, clockInTime: string, clockOutTime: string, breakDuration: number) =>
         api('/add-shift', { adminUserId, targetUserId, organizationId, jobId, clockInTime, clockOutTime, breakDuration }),
     // Re-create a coworker's completed shifts for another person; dryRun previews (nothing written).

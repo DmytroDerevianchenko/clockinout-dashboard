@@ -4,7 +4,7 @@
 // phone's View Hours. The route map comes with the map work later.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ApiError } from '../api/client';
-import { hoursApi, pairShifts, fmtDay, fmtTime, toLocalInput, type Shift, type PeriodLite } from '../api/hours';
+import { hoursApi, pairShifts, fmtDay, fmtTime, type Shift, type PeriodLite } from '../api/hours';
 import { jobsApi, type Job } from '../api/jobs';
 import { team, type RosterUser } from '../api/team';
 import { money, periodLabel } from '../api/payroll';
@@ -13,6 +13,8 @@ import { SkeletonTable } from '../components/Skeleton';
 import { useToast } from '../components/Toast';
 import Dialog, { SaveFooter } from '../components/Dialog';
 import CopyShiftsDialog from '../components/CopyShiftsDialog';
+import EditShiftDialog from '../components/EditShiftDialog';
+import RowMenu from '../components/Menu';
 
 const n = (v: unknown) => (v == null || v === '' ? 0 : Number(v));
 
@@ -28,7 +30,7 @@ export default function Hours() {
     const [jobs, setJobs] = useState<Job[]>([]);
     const [shifts, setShifts] = useState<Shift[] | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [edit, setEdit] = useState<{ kind: 'time'; shift: Shift; which: 'in' | 'out' } | { kind: 'note'; shift: Shift } | { kind: 'delete'; shift: Shift } | { kind: 'add' } | { kind: 'copy' } | null>(null);
+    const [edit, setEdit] = useState<{ kind: 'shift'; shift: Shift } | { kind: 'end'; shift: Shift } | { kind: 'note'; shift: Shift } | { kind: 'delete'; shift: Shift } | { kind: 'add' } | { kind: 'copy' } | null>(null);
     const toast = useToast();
     const [busy, setBusy] = useState(false);
 
@@ -115,14 +117,19 @@ export default function Hours() {
                                     <td>{fmtDay(s.in.time)}</td>
                                     <td><strong>{s.user_name}</strong></td>
                                     <td>{s.job_name ?? <span className="faint">—</span>}</td>
-                                    <td><button className="linkish" onClick={() => setEdit({ kind: 'time', shift: s, which: 'in' })}>{fmtTime(s.in.time)}</button></td>
-                                    <td>{s.out ? <button className="linkish" onClick={() => setEdit({ kind: 'time', shift: s, which: 'out' })}>{fmtTime(s.out.time)}</button> : <span className="dot live" title="Still on the clock" />}</td>
+                                    <td>{fmtTime(s.in.time)}</td>
+                                    <td>{s.out ? fmtTime(s.out.time) : <><span className="dot live" />on the clock</>}</td>
                                     <td>{s.out?.break_duration ? `${s.out.break_duration} min` : <span className="faint">—</span>}</td>
                                     <td>{s.out ? `${n(s.out.hours_worked).toFixed(2)} h` : ''}</td>
                                     <td>{s.out ? money(s.out.earned) : ''}</td>
                                     <td className="actions">
-                                        <button className="btn btn-sm" title={s.in.note || s.out?.note || 'Add a note'} onClick={() => setEdit({ kind: 'note', shift: s })}>{(s.in.note || s.out?.note) ? 'Note ✓' : 'Note'}</button>
-                                        <button className="btn btn-sm" onClick={() => setEdit({ kind: 'delete', shift: s })}>Delete</button>
+                                        {/* One obvious door for every correction (job, times, break); the rest in the menu. */}
+                                        <button className="btn btn-sm" onClick={() => setEdit({ kind: 'shift', shift: s })}>Edit</button>
+                                        <RowMenu items={[
+                                            { label: (s.in.note || s.out?.note) ? 'Edit note' : 'Add a note', onClick: () => setEdit({ kind: 'note', shift: s }) },
+                                            !s.out && { label: 'End shift now', onClick: () => setEdit({ kind: 'end', shift: s }) },
+                                            { label: 'Delete shift', danger: true, onClick: () => setEdit({ kind: 'delete', shift: s }) },
+                                        ]} />
                                     </td>
                                 </tr>
                             ))}
@@ -131,9 +138,15 @@ export default function Hours() {
                 )}
             </div>
 
-            {edit?.kind === 'time' && session && (
-                <TimeDialog label={edit.which === 'in' ? 'Clock in time' : 'Clock out time'} initial={edit.which === 'in' ? edit.shift.in.time : edit.shift.out!.time} busy={busy} onClose={() => setEdit(null)}
-                    onSave={v => run(() => hoursApi.setTime(session.userId, edit.which === 'in' ? edit.shift.in.id : edit.shift.out!.id, new Date(v).toISOString()))} />
+            {edit?.kind === 'shift' && (
+                <EditShiftDialog shift={edit.shift} jobs={jobs} onClose={() => setEdit(null)} onChanged={load}
+                    onDone={msg => { setEdit(null); toast(msg); load(); }} />
+            )}
+            {edit?.kind === 'end' && session && org && (
+                <Dialog title={`End ${edit.shift.user_name}'s shift?`} subtitle={`On the clock${edit.shift.job_name ? ` at ${edit.shift.job_name}` : ''} since ${fmtDay(edit.shift.in.time)} ${fmtTime(edit.shift.in.time)}. The shift ends now.`} onClose={() => setEdit(null)}
+                    footer={<SaveFooter onCancel={() => setEdit(null)} saving={busy} label="End shift" onSave={() => run(() => team.endShift(session.userId, edit.shift.in.id, new Date().toISOString(), org.organization_id))} />}>
+                    <p className="muted">You can adjust the times afterwards with Edit.</p>
+                </Dialog>
             )}
             {edit?.kind === 'note' && session && (
                 <NoteDialog initial={edit.shift.in.note ?? edit.shift.out?.note ?? ''} busy={busy} onClose={() => setEdit(null)} onSave={v => run(() => hoursApi.addNote(session.userId, edit.shift.in.id, v))} />
@@ -156,14 +169,6 @@ export default function Hours() {
     );
 }
 
-function TimeDialog({ label, initial, busy, onClose, onSave }: { label: string; initial: string; busy: boolean; onClose: () => void; onSave: (v: string) => void }) {
-    const [v, setV] = useState(toLocalInput(initial));
-    return (
-        <Dialog title={label} subtitle="Hours and earnings are recalculated from the new time." onClose={onClose} footer={<SaveFooter onCancel={onClose} saving={busy} onSave={() => onSave(v)} />}>
-            <label className="field"><span>{label}</span><input type="datetime-local" value={v} onChange={e => setV(e.target.value)} autoFocus /></label>
-        </Dialog>
-    );
-}
 function NoteDialog({ initial, busy, onClose, onSave }: { initial: string; busy: boolean; onClose: () => void; onSave: (v: string) => void }) {
     const [v, setV] = useState(initial);
     return (

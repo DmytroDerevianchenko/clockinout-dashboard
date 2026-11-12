@@ -15,6 +15,8 @@ export const jobsApi = {
     // One field at a time, like /update-user; '' clears address / latitude / longitude / description.
     update: (userId: number, organizationId: number, jobId: number, field: string, value: string) =>
         api('/update-job', { userId, organizationId, jobId, field, value }),
+    // Deletes the job AND its clock-in history (the server refuses when that would rewrite paid payroll).
+    remove: (userId: number, jobId: number) => api('/delete-job', { userId, jobId }),
     setArchived: (userId: number, organizationId: number, jobId: number, archived: boolean) =>
         api('/job-archived', { userId, organizationId, jobId, archived }),
     setGeofence: (userId: number, organizationId: number, jobId: number, geofenceEnabled: boolean, geofenceRadius: number) =>

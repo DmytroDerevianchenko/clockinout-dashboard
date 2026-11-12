@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { NAV, NAV_ICONS, initialsOf } from '../layout/Shell';
 import Dialog, { SaveFooter } from '../components/Dialog';
 import ThemeSwitch from '../components/ThemeSwitch';
+import RowMenu from '../components/Menu';
 import { useToast } from '../components/Toast';
 import { SkeletonCards, SkeletonList, SkeletonRecord, SkeletonTable } from '../components/Skeleton';
 
@@ -90,7 +91,7 @@ export default function Styleguide() {
                                                 <td><div className={'week' + (over ? ' over' : near ? ' near' : '')}><span>{u.week.toFixed(1)} / {u.cap} h</span><div className="bar"><div style={{ width: `${Math.min(100, (u.week / u.cap) * 100)}%` }} /></div></div></td>
                                                 <td>{u.bal === 'settled' ? <span className="faint">settled</span> : <span className={u.owe ? 'danger' : 'caution'}>{u.bal}</span>}</td>
                                                 <td><span className={'pill' + (u.name === 'Liam Chen' ? ' caution' : u.name === 'Priya Nair' ? ' danger' : '')}>{u.name === 'Liam Chen' ? 'Inactive' : u.name === 'Priya Nair' ? 'Terminated' : 'Active'}</span></td>
-                                                <td className="actions"><button className="btn btn-sm">{u.live ? 'End shift' : 'Clock in'}</button></td>
+                                                <td className="actions"><button className="btn btn-sm">{u.live ? 'End shift' : 'Clock in'}</button><RowMenu items={[{ label: 'View or edit details', onClick: () => toast('View') }, { label: 'Grant admin access', onClick: () => toast('Admin') }, { label: 'Terminate', onClick: () => toast('Terminate') }, { label: 'Delete employee', danger: true, onClick: () => toast('Delete', 'error') }]} /></td>
                                             </tr>
                                         );
                                     })}

@@ -2,13 +2,16 @@
 // overtime threshold, and the two actions an employer takes from a desk:
 // clock someone in, end their shift. Everything else is on the record.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ApiError } from '../api/client';
 import { team, type RosterUser, type RosterReply, type JobEntry, type OwedRow, money, employmentLabel, statusLabel, timeOnly } from '../api/team';
 import { useAuth } from '../auth';
 import { SkeletonTable } from '../components/Skeleton';
 import Dialog, { SaveFooter } from '../components/Dialog';
 import AddMemberDialog from '../components/AddMemberDialog';
+import MemberActionDialog, { type MemberAction } from '../components/MemberActionDialog';
+import RowMenu from '../components/Menu';
+import { useToast } from '../components/Toast';
 
 export function useRoster() {
     const { session, org } = useAuth();
@@ -36,6 +39,14 @@ export default function Team() {
     const [endFor, setEndFor] = useState<RosterUser | null>(null);
     const [adding, setAdding] = useState(false);
     const [busy, setBusy] = useState<number | null>(null);
+    const [memberAction, setMemberAction] = useState<{ user: RosterUser; action: MemberAction } | null>(null);
+    const navigate = useNavigate();
+    const toast = useToast();
+    // The quick roster actions that need no dialog of their own.
+    async function quick(fn: () => Promise<unknown>, message: string) {
+        try { await fn(); toast(message); await reload(); }
+        catch (e) { toast(e instanceof ApiError ? e.message : 'Could not do that', 'error'); }
+    }
     const [actionError, setActionError] = useState<string | null>(null);
     const [owed, setOwed] = useState<Map<number, OwedRow>>(new Map());
     useEffect(() => {
@@ -113,6 +124,20 @@ export default function Team() {
                                                 ? <button className="btn btn-sm" disabled={busy === u.id} onClick={() => setEndFor(u)}>End shift</button>
                                                 : <button className="btn btn-sm" disabled={busy === u.id} onClick={() => setClockInFor(u)}>Clock in</button>
                                         )}
+                                        {/* The phone's long-press menu. Your own row and the owner's cannot be terminated, deleted or demoted. */}
+                                        {session && org && (() => {
+                                            const manageable = !self && u.role !== 'employer';
+                                            const former = u.status === 'terminated' || u.status === 'inactive';
+                                            return <RowMenu items={[
+                                                { label: 'View or edit details', onClick: () => navigate(`/team/${u.id}`) },
+                                                !u.joined && { label: 'Send invite email', onClick: () => quick(() => team.sendInvite(session.email, u.email, org.organization_id), `Invite sent to ${u.email}`) },
+                                                manageable && { label: u.is_admin ? 'Revoke admin access' : 'Grant admin access', onClick: () => quick(() => team.updateField(session.userId, org.organization_id, u.id, 'is_admin', u.is_admin ? 'false' : 'true'), u.is_admin ? `${u.full_name} is no longer an admin` : `${u.full_name} is now an admin`) },
+                                                manageable && (former
+                                                    ? { label: 'Reactivate', onClick: () => setMemberAction({ user: u, action: 'reactivate' }) }
+                                                    : { label: 'Terminate', onClick: () => setMemberAction({ user: u, action: 'terminate' }) }),
+                                                manageable && { label: 'Delete employee', danger: true, onClick: () => setMemberAction({ user: u, action: 'delete' }) },
+                                            ]} />;
+                                        })()}
                                     </td>
                                 </tr>
                             );
@@ -129,6 +154,8 @@ export default function Team() {
                     <p className="muted">You can adjust the times afterwards on their hours.</p>
                 </Dialog>
             )}
+            {memberAction && <MemberActionDialog user={memberAction.user} action={memberAction.action} onClose={() => setMemberAction(null)}
+                onDone={msg => { setMemberAction(null); toast(msg); reload(); }} />}
             {adding && <AddMemberDialog onClose={() => setAdding(false)} onDone={() => { setAdding(false); reload(); }} />}
         </>
     );
