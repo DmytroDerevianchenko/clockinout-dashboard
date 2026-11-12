@@ -1,13 +1,13 @@
 // Organizations: the list (GET /organizations) and the whole-row update
 // (PUT /organizations) the phones use. The update is a whole-object write,
 // so every field is read first and sent back with the one that changed.
-import { api, apiGet } from './client';
+import { api, apiBlob, apiGet } from './client';
 
 export type OrgRow = {
     id: number; name: string; default_break_duration: number | null; pay_period_type: string;
     street: string | null; unit_number: string | null; city: string | null; state_province: string | null; postal_code: string | null; country_code: string | null;
     tax_config_json: Record<string, unknown> | null; payroll_config_json: PayrollConfig | null;
-    default_employment_type: string | null; pay_period_start_day: string | null; currency_code: string | null; invoice_prefix: string | null; logo_show: boolean;
+    default_employment_type: string | null; pay_period_start_day: string | null; currency_code: string | null; invoice_prefix: string | null; logo_show: boolean; has_logo?: boolean;
 };
 export type PayrollConfig = {
     overtime?: { applies_to?: string[]; multiplier?: number; threshold_week?: number; threshold_day?: number };
@@ -47,6 +47,14 @@ export const orgApi = {
     list: (userId: number) => apiGet<{ status: string; organizations: OrgRow[] }>('/organizations', { userId }),
     savePayrollConfig: (userId: number, o: OrgRow, config: PayrollConfig) => putOrg(userId, { ...o, payroll_config_json: config }),
     saveDetails: (userId: number, o: OrgRow) => putOrg(userId, o),
+    // Organization management (the phone's Organizations list).
+    create: (userId: number, body: Record<string, unknown>) => api<{ status: string; organizationId?: number }>('/create-organization', { userId, ...body }),
+    remove: (userId: number, organizationId: number) => api('/delete-organization', { userId, organizationId }),
+    setDefault: (userId: number, organizationId: number) => api('/set-default-organization', { userId, organizationId }),
+    // The logo: a PNG of at most 512 px, sent as bare base64; read back as bytes.
+    uploadLogo: (organizationId: number, logoBase64: string) => api('/org-logo', { organizationId, logoBase64 }),
+    removeLogo: (organizationId: number) => api(`/org-logo?organizationId=${organizationId}`, undefined, 'DELETE'),
+    logoBlob: (organizationId: number) => apiBlob(`/org-logo?organizationId=${organizationId}`),
     settings: (userId: number, organizationId: number) => apiGet<{ status: string; settings: OrgSettings }>('/settings', { userId, organizationId }),
     saveSettings: (organizationId: number, settings: OrgSettings) => api('/settings', { organizationId, settings }),
     invoices: (userId: number, organizationId: number, year?: number, includeDeleted = false) => api<{ status: string; invoices: InvoiceRow[] }>('/invoices/list', { userId, organizationId, year, includeDeleted }),

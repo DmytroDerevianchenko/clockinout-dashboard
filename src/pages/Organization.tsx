@@ -7,6 +7,7 @@ import { n } from '../api/payroll';
 import { useAuth } from '../auth';
 import { SkeletonRecord } from '../components/Skeleton';
 import Dialog, { SaveFooter } from '../components/Dialog';
+import { OrgList, OrgLogo } from '../components/OrgManagement';
 
 export default function Organization() {
     const { session, org } = useAuth();
@@ -46,6 +47,7 @@ export default function Organization() {
                 <section className="card">
                     <div className="person-head"><h2>Details</h2><button className="btn" onClick={() => setEditDetails(true)}>Edit</button></div>
                     <div className="kv"><span>Name</span><strong>{row.name}</strong></div>
+                    <OrgLogo row={row} onChanged={load} />
                     <div className="kv"><span>Address</span><span>{addr || <span className="caution">Not set — taxes, overtime and holiday pay follow the province</span>}</span></div>
                     <div className="kv"><span>Pay period</span><span>{row.pay_period_type.replace('_', '-')}, starts {row.pay_period_start_day ?? 'Monday'}</span></div>
                     <div className="kv"><span>Default employment type</span><span>{row.default_employment_type?.replace('_', '-') ?? '—'}</span></div>
@@ -84,6 +86,8 @@ export default function Organization() {
                         </div>
                     </div>
                 </section>
+
+                <OrgList />
             </div>
             {editDetails && <DetailsDialog row={row} onClose={() => setEditDetails(false)} onDone={() => { setEditDetails(false); load(); }} />}
         </>

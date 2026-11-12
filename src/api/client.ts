@@ -67,3 +67,12 @@ export function apiGet<T = unknown>(path: string, params: Record<string, string 
         .join('&');
     return api<T>(`${path}${q ? `?${q}` : ''}`);
 }
+
+/** GET that returns bytes (the organization logo). Same token, same 401 rule as api(). */
+export async function apiBlob(path: string): Promise<Blob> {
+    const token = getToken();
+    const res = await fetch(API_BASE + path, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+    if (res.status === 401) window.dispatchEvent(new Event(SESSION_LOST));
+    if (!res.ok) throw new ApiError(res.status, 'Could not load the file');
+    return res.blob();
+}

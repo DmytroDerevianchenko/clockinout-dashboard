@@ -41,6 +41,8 @@ type Auth = {
     /** Employer or admin in the current org — the dashboard is for them. */
     canManage: boolean;
     setOrgId: (id: number) => void;
+    /** Re-read memberships and the default organization (after creating or deleting one). */
+    refresh: () => Promise<void>;
     signIn: (email: string, password: string) => Promise<void>;
     signInWithGoogle: (idToken: string) => Promise<void>;
     signOut: () => void;
@@ -71,6 +73,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         adopt(await api<LoginReply>('/auth-google', { idToken }));
     }, [adopt]);
 
+    const refresh = useCallback(async () => { adopt(await api<LoginReply>('/me')); }, [adopt]);
+
     const signOut = useCallback(() => {
         setToken(null);
         try { localStorage.removeItem(SESSION_KEY); } catch { /* ignore */ }
@@ -99,8 +103,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const canManage = !!org && (org.role === 'employer' || org.is_admin);
 
-    const value = useMemo<Auth>(() => ({ session, org, canManage, setOrgId, signIn, signInWithGoogle, signOut }),
-        [session, org, canManage, setOrgId, signIn, signInWithGoogle, signOut]);
+    const value = useMemo<Auth>(() => ({ session, org, canManage, setOrgId, refresh, signIn, signInWithGoogle, signOut }),
+        [session, org, canManage, setOrgId, refresh, signIn, signInWithGoogle, signOut]);
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
