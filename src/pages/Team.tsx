@@ -13,6 +13,7 @@ import MemberActionDialog, { type MemberAction } from '../components/MemberActio
 import RowMenu from '../components/Menu';
 import { TeamStatsDialog } from '../components/StatsDialog';
 import { useToast } from '../components/Toast';
+import { tx, hoursText, perHour } from '../i18n';
 
 export function useRoster() {
     const { session, org } = useAuth();
@@ -22,7 +23,7 @@ export function useRoster() {
         if (!session || !org) return Promise.resolve();
         return team.roster(session.userId, org.organization_id)
             .then(r => { setData(r); setError(null); })
-            .catch(e => setError(e instanceof ApiError ? e.message : 'Could not load the team'));
+            .catch(e => setError(e instanceof ApiError ? e.message : tx("Could not load the team")));
     }, [session, org]);
     useEffect(() => { setData(null); reload(); }, [reload]);
     return { data, error, reload };
@@ -47,7 +48,7 @@ export default function Team() {
     // The quick roster actions that need no dialog of their own.
     async function quick(fn: () => Promise<unknown>, message: string) {
         try { await fn(); toast(message); await reload(); }
-        catch (e) { toast(e instanceof ApiError ? e.message : 'Could not do that', 'error'); }
+        catch (e) { toast(e instanceof ApiError ? e.message : tx("Could not do that"), 'error'); }
     }
     const [actionError, setActionError] = useState<string | null>(null);
     const [owed, setOwed] = useState<Map<number, OwedRow>>(new Map());
@@ -69,7 +70,7 @@ export default function Team() {
         if (!session || !org || !u.current_clock_in_id) return;
         setBusy(u.id); setActionError(null);
         try { await team.endShift(session.userId, u.current_clock_in_id, nowIso(), org.organization_id); await reload(); }
-        catch (e) { setActionError(e instanceof ApiError ? e.message : 'Could not end the shift'); }
+        catch (e) { setActionError(e instanceof ApiError ? e.message : tx('Could not end the shift')); }
         finally { setBusy(null); setEndFor(null); }
     }
 
@@ -80,16 +81,16 @@ export default function Team() {
     return (
         <>
             <div className="toolbar">
-                <input className="search" placeholder="Search by name or email" value={q} onChange={e => setQ(e.target.value)} />
-                <label className="check"><input type="checkbox" checked={showTerminated} onChange={e => setShowTerminated(e.target.checked)} /> Show terminated</label>
+                <input className="search" placeholder={tx("Search by name or email")} value={q} onChange={e => setQ(e.target.value)} />
+                <label className="check"><input type="checkbox" checked={showTerminated} onChange={e => setShowTerminated(e.target.checked)} /> {tx("Show terminated")}</label>
                 <span className="spacer" />
-                <button className="btn" onClick={() => setStats(true)}>Statistics</button>
-                <button className="btn btn-primary" onClick={() => setAdding(true)}>Add member</button>
+                <button className="btn" onClick={() => setStats(true)}>{tx("Statistics")}</button>
+                <button className="btn btn-primary" onClick={() => setAdding(true)}>{tx("Add member")}</button>
             </div>
             {actionError && <p className="error-line">{actionError}</p>}
             <div className="card card-flush">
                 <table className="table table-hover">
-                    <thead><tr><th>Name</th><th>Type</th><th>Rate</th><th>This week</th><th>Balance</th><th>Status</th><th></th></tr></thead>
+                    <thead><tr><th>{tx("Name")}</th><th>{tx("Type")}</th><th>{tx("Rate")}</th><th>{tx("This week")}</th><th>{tx("Balance")}</th><th>{tx("Status")}</th><th></th></tr></thead>
                     <tbody>
                         {users.map(u => {
                             const self = u.id === session?.userId;
@@ -100,62 +101,60 @@ export default function Team() {
                                     <td>
                                         <Link to={`/team/${u.id}`} className="row-link">
                                             <span className={'dot' + (u.is_clocked_in ? ' live' : '')} />
-                                            <strong>{u.full_name}</strong>{self && <span className="pill">You</span>}
-                                            {!u.joined && <span className="pill caution">Not joined</span>}
+                                            <strong>{u.full_name}</strong>{self && <span className="pill">{tx("You")}</span>}
+                                            {!u.joined && <span className="pill caution">{tx("Not joined")}</span>}
                                         </Link>
                                         <div className="faint small">
-                                            {u.is_clocked_in
-                                                ? `On the clock${u.current_job_name ? ` · ${u.current_job_name}` : ''} since ${timeOnly(u.clock_in_time)}`
-                                                : u.email}
+                                            {u.is_clocked_in ? tx("On the clock{0} since {1}", u.current_job_name ? ` · ${u.current_job_name}` : '', timeOnly(u.clock_in_time)) : u.email}
                                         </div>
                                     </td>
-                                    <td>{employmentLabel(u.employment_type)}{u.is_admin && u.role !== 'employer' ? <span className="pill">Admin</span> : null}{u.role === 'employer' ? <span className="pill">Owner</span> : null}</td>
-                                    <td>{u.current_rate != null ? `${money(u.current_rate)}/h` : <span className="faint">—</span>}</td>
+                                    <td>{employmentLabel(u.employment_type)}{u.is_admin && u.role !== 'employer' ? <span className="pill">{tx("Admin")}</span> : null}{u.role === 'employer' ? <span className="pill">{tx("Owner")}</span> : null}</td>
+                                    <td>{u.current_rate != null ? perHour(money(u.current_rate)) : <span className="faint">—</span>}</td>
                                     <td>
                                         {ot.enabled && ot.threshold > 0 ? (
                                             <div className={'week' + (over ? ' over' : near ? ' near' : '')}>
-                                                <span>{u.week_hours.toFixed(1)} / {ot.threshold} h</span>
+                                                <span>{tx('{0} / {1} h', u.week_hours.toFixed(1), ot.threshold)}</span>
                                                 <div className="bar"><div style={{ width: `${Math.min(100, (u.week_hours / ot.threshold) * 100)}%` }} /></div>
                                             </div>
-                                        ) : <span>{u.week_hours.toFixed(1)} h</span>}
+                                        ) : <span>{hoursText(u.week_hours)}</span>}
                                     </td>
-                                    <td>{(() => { const o = owed.get(u.id); if (!o || u.role === 'employer') return <span className="faint">—</span>; const b = o.owed; return Math.abs(b) < 0.005 ? <span className="faint">settled</span> : <span className={b > 0 ? 'danger' : 'caution'} title={b > 0 ? 'You owe them' : 'They owe you'}>{b > 0 ? '' : '−'}{money(Math.abs(b))}</span>; })()}</td>
+                                    <td>{(() => { const o = owed.get(u.id); if (!o || u.role === 'employer') return <span className="faint">—</span>; const b = o.owed; return Math.abs(b) < 0.005 ? <span className="faint">{tx("settled")}</span> : <span className={b > 0 ? 'danger' : 'caution'} title={b > 0 ? tx("You owe them") : tx("They owe you")}>{b > 0 ? '' : '−'}{money(Math.abs(b))}</span>; })()}</td>
                                     <td><span className={'pill' + (u.status === 'terminated' ? ' danger' : u.status === 'inactive' ? ' caution' : '')}>{statusLabel(u.status)}</span></td>
                                     <td className="actions">
                                         {u.status === 'active' && u.employment_type !== null && (
                                             u.is_clocked_in
-                                                ? <button className="btn btn-sm" disabled={busy === u.id} onClick={() => setEndFor(u)}>End shift</button>
-                                                : <button className="btn btn-sm" disabled={busy === u.id} onClick={() => setClockInFor(u)}>Clock in</button>
+                                                ? <button className="btn btn-sm" disabled={busy === u.id} onClick={() => setEndFor(u)}>{tx("End shift")}</button>
+                                                : <button className="btn btn-sm" disabled={busy === u.id} onClick={() => setClockInFor(u)}>{tx("Clock in")}</button>
                                         )}
                                         {/* The phone's long-press menu. Your own row and the owner's cannot be terminated, deleted or demoted. */}
                                         {session && org && (() => {
                                             const manageable = !self && u.role !== 'employer';
                                             const former = u.status === 'terminated' || u.status === 'inactive';
                                             return <RowMenu items={[
-                                                { label: 'View or edit details', onClick: () => navigate(`/team/${u.id}`) },
-                                                { label: 'See hours', onClick: () => navigate(`/hours?person=${u.id}`) },
-                                                !u.joined && { label: 'Send invite email', onClick: () => quick(() => team.sendInvite(session.email, u.email, org.organization_id), `Invite sent to ${u.email}`) },
-                                                manageable && { label: u.is_admin ? 'Revoke admin access' : 'Grant admin access', onClick: () => quick(() => team.updateField(session.userId, org.organization_id, u.id, 'is_admin', u.is_admin ? 'false' : 'true'), u.is_admin ? `${u.full_name} is no longer an admin` : `${u.full_name} is now an admin`) },
+                                                { label: tx("View or edit details"), onClick: () => navigate(`/team/${u.id}`) },
+                                                { label: tx("See hours"), onClick: () => navigate(`/hours?person=${u.id}`) },
+                                                !u.joined && { label: tx("Send invite email"), onClick: () => quick(() => team.sendInvite(session.email, u.email, org.organization_id), tx('Invite sent to {0}', u.email)) },
+                                                manageable && { label: u.is_admin ? tx("Revoke admin access") : tx("Grant admin access"), onClick: () => quick(() => team.updateField(session.userId, org.organization_id, u.id, 'is_admin', u.is_admin ? 'false' : 'true'), u.is_admin ? tx('{0} is no longer an admin', u.full_name) : tx('{0} is now an admin', u.full_name)) },
                                                 manageable && (former
-                                                    ? { label: 'Reactivate', onClick: () => setMemberAction({ user: u, action: 'reactivate' }) }
-                                                    : { label: 'Terminate', onClick: () => setMemberAction({ user: u, action: 'terminate' }) }),
-                                                manageable && { label: 'Delete employee', danger: true, onClick: () => setMemberAction({ user: u, action: 'delete' }) },
+                                                    ? { label: tx("Reactivate"), onClick: () => setMemberAction({ user: u, action: 'reactivate' }) }
+                                                    : { label: tx("Terminate"), onClick: () => setMemberAction({ user: u, action: 'terminate' }) }),
+                                                manageable && { label: tx("Delete employee"), danger: true, onClick: () => setMemberAction({ user: u, action: 'delete' }) },
                                             ]} />;
                                         })()}
                                     </td>
                                 </tr>
                             );
                         })}
-                        {users.length === 0 && <tr><td colSpan={7} className="empty">Nobody matches.</td></tr>}
+                        {users.length === 0 && <tr><td colSpan={7} className="empty">{tx("Nobody matches.")}</td></tr>}
                     </tbody>
                 </table>
             </div>
 
             {clockInFor && <ClockInDialog user={clockInFor} onClose={() => setClockInFor(null)} onDone={() => { setClockInFor(null); reload(); }} />}
             {endFor && (
-                <Dialog title={`End ${endFor.full_name}'s shift?`} subtitle={`Clocked in${endFor.current_job_name ? ` at ${endFor.current_job_name}` : ''} since ${timeOnly(endFor.clock_in_time)}. The shift ends now.`} onClose={() => setEndFor(null)}
-                    footer={<SaveFooter onCancel={() => setEndFor(null)} onSave={() => endShift(endFor)} saving={busy === endFor.id} label="End shift" />}>
-                    <p className="muted">You can adjust the times afterwards on their hours.</p>
+                <Dialog title={tx("End {0}'s shift?", endFor.full_name)} subtitle={tx("Clocked in{0} since {1}. The shift ends now.", endFor.current_job_name ? tx(' at {0}', endFor.current_job_name) : '', timeOnly(endFor.clock_in_time))} onClose={() => setEndFor(null)}
+                    footer={<SaveFooter onCancel={() => setEndFor(null)} onSave={() => endShift(endFor)} saving={busy === endFor.id} label={tx("End shift")} />}>
+                    <p className="muted">{tx("You can adjust the times afterwards on their hours.")}</p>
                 </Dialog>
             )}
             {stats && <TeamStatsDialog onClose={() => setStats(false)} />}
@@ -182,26 +181,26 @@ export function ClockInDialog({ user, onClose, onDone }: { user: RosterUser; onC
         if (!session || !org) return;
         team.jobs(session.userId, org.organization_id)
             .then(r => { const open = r.jobs.filter(j => !j.archived); setJobs(open); if (open.length === 1) setJobId(open[0].id); })
-            .catch(e => setError(e instanceof ApiError ? e.message : 'Could not load jobs'));
+            .catch(e => setError(e instanceof ApiError ? e.message : tx("Could not load jobs")));
     }, [session, org]);
 
     async function save() {
         if (!session || !org || jobId === '') return;
         setSaving(true); setError(null);
         try { await team.employerClockIn(session.userId, user.id, org.organization_id, Number(jobId), new Date(when).toISOString()); onDone(); }
-        catch (e) { setError(e instanceof ApiError ? e.message : 'Could not clock in'); setSaving(false); }
+        catch (e) { setError(e instanceof ApiError ? e.message : tx("Could not clock in")); setSaving(false); }
     }
 
     return (
-        <Dialog title={`Clock in ${user.full_name}`} subtitle="Starts a shift on their behalf, exactly as the app does." onClose={onClose}
-            footer={<SaveFooter onCancel={onClose} onSave={save} saving={saving} label="Clock in" disabled={jobId === ''} />}>
-            <label className="field"><span>Job</span>
+        <Dialog title={tx("Clock in {0}", user.full_name)} subtitle={tx("Starts a shift on their behalf, exactly as the app does.")} onClose={onClose}
+            footer={<SaveFooter onCancel={onClose} onSave={save} saving={saving} label={tx("Clock in")} disabled={jobId === ''} />}>
+            <label className="field"><span>{tx("Job")}</span>
                 <select value={jobId} onChange={e => setJobId(e.target.value === '' ? '' : Number(e.target.value))}>
-                    <option value="">{jobs ? 'Choose a job' : 'Loading…'}</option>
+                    <option value="">{jobs ? tx("Choose a job") : tx("Loading…")}</option>
                     {jobs?.map(j => <option key={j.id} value={j.id}>{j.name}</option>)}
                 </select>
             </label>
-            <label className="field"><span>Start time</span>
+            <label className="field"><span>{tx("Start time")}</span>
                 <input type="datetime-local" value={when} onChange={e => setWhen(e.target.value)} />
             </label>
             {error && <p className="error-line">{error}</p>}

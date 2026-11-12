@@ -11,6 +11,7 @@ import AddressSearch from '../components/AddressSearch';
 import { useToast } from '../components/Toast';
 import { SkeletonTable } from '../components/Skeleton';
 import Dialog, { SaveFooter } from '../components/Dialog';
+import { tx } from '../i18n';
 
 export default function Clients() {
     const { session, org } = useAuth();
@@ -25,13 +26,13 @@ export default function Clients() {
     async function act(fn: () => Promise<unknown>, message: string) {
         setBusy(true);
         try { await fn(); toast(message); setDeleting(null); load(); }
-        catch (e) { toast(e instanceof ApiError ? e.message : 'Could not do that', 'error'); }
+        catch (e) { toast(e instanceof ApiError ? e.message : tx("Could not do that"), 'error'); }
         finally { setBusy(false); }
     }
     const load = useCallback(() => {
         if (!session || !org) return;
         clientsApi.list(session.userId, org.organization_id, showDeleted).then(r => { setClients(r.clients); setError(null); })
-            .catch(e => setError(e instanceof ApiError ? e.message : 'Could not load clients'));
+            .catch(e => setError(e instanceof ApiError ? e.message : tx("Could not load clients")));
     }, [session, org, showDeleted]);
     useEffect(() => { setClients(null); load(); }, [load]);
 
@@ -39,40 +40,40 @@ export default function Clients() {
     if (!clients) return <SkeletonTable rows={5} cols={6} />;
     return (
         <>
-            <div className="toolbar"><label className="check"><input type="checkbox" checked={showDeleted} onChange={e => setShowDeleted(e.target.checked)} /> Show deleted</label><span className="spacer" /><button className="btn btn-primary" onClick={() => setEditing('new')}>New client</button></div>
+            <div className="toolbar"><label className="check"><input type="checkbox" checked={showDeleted} onChange={e => setShowDeleted(e.target.checked)} /> {tx("Show deleted")}</label><span className="spacer" /><button className="btn btn-primary" onClick={() => setEditing('new')}>{tx("New client")}</button></div>
             <div className="card card-flush">
                 <table className="table table-hover">
-                    <thead><tr><th>Company</th><th>Contact</th><th>Email</th><th>Terms</th><th>Tax</th><th>Invoices</th><th>Owes you</th><th></th></tr></thead>
+                    <thead><tr><th>{tx("Company")}</th><th>{tx("Contact")}</th><th>{tx("Email")}</th><th>{tx("Terms")}</th><th>{tx("Tax")}</th><th>{tx("Invoices")}</th><th>{tx("Owes you")}</th><th></th></tr></thead>
                     <tbody>
                         {clients.map(c => (
                             <tr key={c.id} className={c.is_deleted ? 'muted' : ''}>
                                 <td><button className="row-link linkish" onClick={() => setEditing(c)}><strong>{c.company_name}</strong></button>
                                     <div className="faint small">{[c.city, c.state_province].filter(Boolean).join(', ')}</div></td>
                                 <td>{c.contact_name ?? <span className="faint">—</span>}{c.phone && <div className="faint small">{c.phone}</div>}</td>
-                                <td>{c.email ?? <span className="caution">no email</span>}{c.cc_emails?.length ? <div className="faint small">cc {c.cc_emails.join(', ')}</div> : null}</td>
-                                <td>{c.payment_terms_days ?? 30} days</td>
+                                <td>{c.email ?? <span className="caution">{tx("no email")}</span>}{c.cc_emails?.length ? <div className="faint small">{tx("cc")} {c.cc_emails.join(', ')}</div> : null}</td>
+                                <td>{c.payment_terms_days ?? 30} {tx("days")}</td>
                                 <td>{c.default_tax_rate != null ? `${(Number(c.default_tax_rate) * 100).toFixed(0)}%` : '—'}</td>
                                 <td>{c.invoice_count ?? ''}</td>
-                                <td>{(c.total_outstanding ?? 0) > 0.005 ? <span className="caution">{money(c.total_outstanding!)}</span> : (c.total_billed ?? 0) > 0.005 ? <span className="faint">settled</span> : <span className="faint">—</span>}</td>
+                                <td>{(c.total_outstanding ?? 0) > 0.005 ? <span className="caution">{money(c.total_outstanding!)}</span> : (c.total_billed ?? 0) > 0.005 ? <span className="faint">{tx("settled")}</span> : <span className="faint">—</span>}</td>
                                 <td className="actions">
                                     {c.is_deleted
-                                        ? session && org && <button className="btn btn-sm" disabled={busy} onClick={() => act(() => clientsApi.recover(session.userId, org.organization_id, c.id), `${c.company_name} restored`)}>Restore</button>
+                                        ? session && org && <button className="btn btn-sm" disabled={busy} onClick={() => act(() => clientsApi.recover(session.userId, org.organization_id, c.id), `${c.company_name} restored`)}>{tx("Restore")}</button>
                                         : <RowMenu items={[
-                                            { label: 'View or edit details', onClick: () => setEditing(c) },
-                                            { label: 'New invoice', onClick: () => navigate('/invoices', { state: { newForClient: c.id } }) },
-                                            { label: 'Delete client', danger: true, onClick: () => setDeleting(c) },
+                                            { label: tx("View or edit details"), onClick: () => setEditing(c) },
+                                            { label: tx("New invoice"), onClick: () => navigate('/invoices', { state: { newForClient: c.id } }) },
+                                            { label: tx("Delete client"), danger: true, onClick: () => setDeleting(c) },
                                         ]} />}
                                 </td>
                             </tr>
                         ))}
-                        {clients.length === 0 && <tr><td colSpan={8} className="empty">No clients yet.</td></tr>}
+                        {clients.length === 0 && <tr><td colSpan={8} className="empty">{tx("No clients yet.")}</td></tr>}
                     </tbody>
                 </table>
             </div>
             {deleting && session && org && (
-                <Dialog title={`Delete ${deleting.company_name}?`} onClose={() => setDeleting(null)}
-                    footer={<SaveFooter onCancel={() => setDeleting(null)} saving={busy} label="Delete" onSave={() => act(() => clientsApi.remove(session.userId, org.organization_id, deleting.id), `${deleting.company_name} deleted`)} />}>
-                    <p className="muted">The client leaves your lists, and their unpaid invoices go with them. Paid invoices stay in your records. You can bring the client back from "Show deleted".</p>
+                <Dialog title={tx("Delete {0}?", deleting.company_name)} onClose={() => setDeleting(null)}
+                    footer={<SaveFooter onCancel={() => setDeleting(null)} saving={busy} label={tx("Delete")} onSave={() => act(() => clientsApi.remove(session.userId, org.organization_id, deleting.id), `${deleting.company_name} deleted`)} />}>
+                    <p className="muted">{tx("The client leaves your lists, and their unpaid invoices go with them. Paid invoices stay in your records. You can bring the client back from \"Show deleted\".")}</p>
                 </Dialog>
             )}
             {editing && <ClientDialog client={editing === 'new' ? null : editing} onClose={() => setEditing(null)} onDone={() => { setEditing(null); load(); }} />}
@@ -112,32 +113,32 @@ export function ClientDialog({ client, onClose, onDone }: { client: Client | nul
                 await invoicesApi.openingBalance(session.userId, org.organization_id, clientId, Number(openAmount), openDate || null);
             }
             onDone(created);
-        } catch (e) { setError(e instanceof ApiError ? e.message : 'Could not save'); setSaving(false); }
+        } catch (e) { setError(e instanceof ApiError ? e.message : tx("Could not save")); setSaving(false); }
     }
     return (
-        <Dialog title={client ? client.company_name : 'New client'} wide onClose={onClose} footer={<SaveFooter onCancel={onClose} onSave={save} saving={saving} disabled={!f.companyName.trim()} />}>
-            <AddressSearch placeholder="Search for the client's address (fills the fields below)" onPick={a => setF(v => ({ ...v, street: a.street, city: a.city, stateProvince: a.province, postalCode: a.postalCode, countryCode: a.countryCode }))} />
+        <Dialog title={client ? client.company_name : tx("New client")} wide onClose={onClose} footer={<SaveFooter onCancel={onClose} onSave={save} saving={saving} disabled={!f.companyName.trim()} />}>
+            <AddressSearch placeholder={tx("Search for the client's address (fills the fields below)")} onPick={a => setF(v => ({ ...v, street: a.street, city: a.city, stateProvince: a.province, postalCode: a.postalCode, countryCode: a.countryCode }))} />
             <div className="grid-2">
-                <label className="field"><span>Company</span><input value={f.companyName} onChange={set('companyName')} autoFocus /></label>
-                <label className="field"><span>Contact name</span><input value={f.contactName} onChange={set('contactName')} /></label>
-                <label className="field"><span>Email (invoices go here)</span><input type="email" value={f.email} onChange={set('email')} /></label>
-                <label className="field"><span>Cc emails (comma-separated)</span><input value={f.cc} onChange={set('cc')} /></label>
-                <label className="field"><span>Phone</span><input value={f.phone} onChange={set('phone')} /></label>
-                <label className="field"><span>Payment terms (days)</span><input inputMode="numeric" value={f.terms} onChange={e => setF(v => ({ ...v, terms: e.target.value.replace(/\D/g, '') }))} /></label>
-                <label className="field"><span>Street</span><input value={f.street} onChange={set('street')} /></label>
-                <label className="field"><span>Unit</span><input value={f.unitNumber} onChange={set('unitNumber')} /></label>
-                <label className="field"><span>City</span><input value={f.city} onChange={set('city')} /></label>
-                <label className="field"><span>Province</span><input value={f.stateProvince} onChange={set('stateProvince')} /></label>
-                <label className="field"><span>Postal code</span><input value={f.postalCode} onChange={set('postalCode')} /></label>
-                <label className="field"><span>Country</span><input value={f.countryCode} onChange={set('countryCode')} /></label>
-                <label className="field"><span>Default tax rate (%)</span><input inputMode="decimal" value={f.taxRate} onChange={e => setF(v => ({ ...v, taxRate: e.target.value.replace(/[^0-9.]/g, '') }))} /></label>
+                <label className="field"><span>{tx("Company")}</span><input value={f.companyName} onChange={set('companyName')} autoFocus /></label>
+                <label className="field"><span>{tx("Contact name")}</span><input value={f.contactName} onChange={set('contactName')} /></label>
+                <label className="field"><span>{tx("Email (invoices go here)")}</span><input type="email" value={f.email} onChange={set('email')} /></label>
+                <label className="field"><span>{tx("Cc emails (comma-separated)")}</span><input value={f.cc} onChange={set('cc')} /></label>
+                <label className="field"><span>{tx("Phone")}</span><input value={f.phone} onChange={set('phone')} /></label>
+                <label className="field"><span>{tx("Payment terms (days)")}</span><input inputMode="numeric" value={f.terms} onChange={e => setF(v => ({ ...v, terms: e.target.value.replace(/\D/g, '') }))} /></label>
+                <label className="field"><span>{tx("Street")}</span><input value={f.street} onChange={set('street')} /></label>
+                <label className="field"><span>{tx("Unit")}</span><input value={f.unitNumber} onChange={set('unitNumber')} /></label>
+                <label className="field"><span>{tx("City")}</span><input value={f.city} onChange={set('city')} /></label>
+                <label className="field"><span>{tx("Province")}</span><input value={f.stateProvince} onChange={set('stateProvince')} /></label>
+                <label className="field"><span>{tx("Postal code")}</span><input value={f.postalCode} onChange={set('postalCode')} /></label>
+                <label className="field"><span>{tx("Country")}</span><input value={f.countryCode} onChange={set('countryCode')} /></label>
+                <label className="field"><span>{tx("Default tax rate (%)")}</span><input inputMode="decimal" value={f.taxRate} onChange={e => setF(v => ({ ...v, taxRate: e.target.value.replace(/[^0-9.]/g, '') }))} /></label>
             </div>
-            <label className="field"><span>Notes</span><textarea rows={2} value={f.notes} onChange={set('notes')} /></label>
-            <div className="eyebrow nopad">Balance carried forward (optional)</div>
-            <p className="muted small">If this client already owed you before the app, enter it here. It becomes a sent invoice with one line and no tax, so what they owe starts right.{client ? ' It is added when you save.' : ''}</p>
+            <label className="field"><span>{tx("Notes")}</span><textarea rows={2} value={f.notes} onChange={set('notes')} /></label>
+            <div className="eyebrow nopad">{tx("Balance carried forward (optional)")}</div>
+            <p className="muted small">{tx("If this client already owed you before the app, enter it here. It becomes a sent invoice with one line and no tax, so what they owe starts right.")}{client ? tx(" It is added when you save.") : ''}</p>
             <div className="grid-2">
-                <label className="field"><span>Amount ($)</span><input inputMode="decimal" value={openAmount} onChange={e => setOpenAmount(e.target.value.replace(/[^0-9.]/g, ''))} placeholder="0" /></label>
-                <label className="field"><span>As of</span><input type="date" value={openDate} onChange={e => setOpenDate(e.target.value)} /></label>
+                <label className="field"><span>{tx("Amount ($)")}</span><input inputMode="decimal" value={openAmount} onChange={e => setOpenAmount(e.target.value.replace(/[^0-9.]/g, ''))} placeholder="0" /></label>
+                <label className="field"><span>{tx("As of")}</span><input type="date" value={openDate} onChange={e => setOpenDate(e.target.value)} /></label>
             </div>
             {error && <p className="error-line">{error}</p>}
         </Dialog>

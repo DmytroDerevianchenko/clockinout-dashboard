@@ -1,6 +1,7 @@
 // A modal sheet: the web's version of the phone's editor sheet. Escape and
 // the backdrop close it; Save is the caller's, so the footer is generic.
 import { useEffect, type ReactNode } from 'react';
+import { tx } from '../i18n';
 
 export default function Dialog({ title, subtitle, onClose, children, footer, wide }: {
     title: string; subtitle?: string; onClose: () => void; children: ReactNode; footer?: ReactNode; wide?: boolean;
@@ -25,13 +26,13 @@ export default function Dialog({ title, subtitle, onClose, children, footer, wid
 }
 
 /** The usual Cancel / Save pair. */
-export function SaveFooter({ onCancel, onSave, saving, label = 'Save', disabled }: {
+export function SaveFooter({ onCancel, onSave, saving, label = tx('Save'), disabled }: {
     onCancel: () => void; onSave: () => void; saving?: boolean; label?: string; disabled?: boolean;
 }) {
     return (
         <>
-            <button className="btn" type="button" onClick={onCancel}>Cancel</button>
-            <button className="btn btn-primary" type="button" onClick={onSave} disabled={saving || disabled}>{saving ? 'Saving…' : label}</button>
+            <button className="btn" type="button" onClick={onCancel}>{tx("Cancel")}</button>
+            <button className="btn btn-primary" type="button" onClick={onSave} disabled={saving || disabled}>{saving ? tx("Saving…") : label}</button>
         </>
     );
 }

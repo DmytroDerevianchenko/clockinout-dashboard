@@ -4,6 +4,8 @@ import type { ReactNode } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../auth';
 import ThemeSwitch from '../components/ThemeSwitch';
+import LangSwitch from '../components/LangSwitch';
+import { tx } from '../i18n';
 
 // One stroke weight, one size, currentColor: the icons take the link's colour
 // (muted → ink on hover → the accent tint when active) with no extra rules.
@@ -24,16 +26,16 @@ export const NAV_ICONS: Record<string, ReactNode> = {
 };
 
 export const NAV: { to: string; label: string; icon: keyof typeof NAV_ICONS; phase?: number }[] = [
-    { to: '/', label: 'Home', icon: 'home' },
-    { to: '/team', label: 'Team', icon: 'team' },
-    { to: '/payroll', label: 'Payroll', icon: 'payroll' },
-    { to: '/payments', label: 'Payments', icon: 'payments' },
-    { to: '/jobs', label: 'Jobs', icon: 'jobs' },
-    { to: '/hours', label: 'Hours', icon: 'hours' },
-    { to: '/schedule', label: 'Schedule', icon: 'schedule' },
-    { to: '/invoices', label: 'Invoices', icon: 'invoices' },
-    { to: '/clients', label: 'Clients', icon: 'clients' },
-    { to: '/organization', label: 'Organization', icon: 'organization' },
+    { to: '/', label: tx("Home"), icon: 'home' },
+    { to: '/team', label: tx("Team"), icon: 'team' },
+    { to: '/payroll', label: tx("Payroll"), icon: 'payroll' },
+    { to: '/payments', label: tx("Payments"), icon: 'payments' },
+    { to: '/jobs', label: tx("Jobs"), icon: 'jobs' },
+    { to: '/hours', label: tx("Hours"), icon: 'hours' },
+    { to: '/schedule', label: tx("Schedule"), icon: 'schedule' },
+    { to: '/invoices', label: tx("Invoices"), icon: 'invoices' },
+    { to: '/clients', label: tx("Clients"), icon: 'clients' },
+    { to: '/organization', label: tx("Organization"), icon: 'organization' },
 ];
 
 /** "Dmytro Derevianchenko" → "DD"; an email → its first letter. */
@@ -53,30 +55,30 @@ export default function Shell() {
             <aside className="sidebar">
                 <div className="brand">
                     <img className="brand-mark" src="/favicon.svg" alt="" />
-                    <div className="brand-name">ClockInOut</div>
+                    <div className="brand-name">{tx("ClockInOut")}</div>
                 </div>
                 {NAV.map(n => (
                     <NavLink key={n.to} to={n.to} end={n.to === '/'} className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')}>
                         {NAV_ICONS[n.icon]}
                         {n.label}
-                        {n.phase && <span className="soon">soon</span>}
+                        {n.phase && <span className="soon">{tx("soon")}</span>}
                     </NavLink>
                 ))}
-                <ThemeSwitch />
+                <div className="prefs"><ThemeSwitch /><LangSwitch /></div>
                 <div className="sidebar-foot">
                     <div className="avatar" aria-hidden="true">{initialsOf(who)}</div>
                     <div className="sidebar-who">
                         <strong title={who}>{who}</strong>
-                        <button className="signout" onClick={signOut}>Sign out</button>
+                        <button className="signout" onClick={signOut}>{tx("Sign out")}</button>
                     </div>
                 </div>
             </aside>
             <main className="main">
                 <div className="topbar">
-                    <h1>{org?.name ?? 'ClockInOut'}</h1>
+                    <h1>{org?.name ?? tx("ClockInOut")}</h1>
                     {orgs.length > 1 && (
                         <label className="org-switch">
-                            <select aria-label="Organization" value={org?.organization_id ?? ''} onChange={e => setOrgId(Number(e.target.value))}>
+                            <select aria-label={tx("Organization")} value={org?.organization_id ?? ''} onChange={e => setOrgId(Number(e.target.value))}>
                                 {orgs.map(o => <option key={o.organization_id} value={o.organization_id}>{o.name}</option>)}
                             </select>
                         </label>

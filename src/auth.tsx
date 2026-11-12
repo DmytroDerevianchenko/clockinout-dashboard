@@ -9,6 +9,7 @@
 // ============================================================
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { api, setToken, getToken, SESSION_LOST } from './api/client';
+import { tx } from './i18n';
 
 export type Membership = { organization_id: number; name: string; role: 'employer' | 'employee' | 'accountant'; is_admin: boolean };
 export type Session = {
@@ -110,6 +111,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth(): Auth {
     const ctx = useContext(AuthContext);
-    if (!ctx) throw new Error('useAuth outside AuthProvider');
+    if (!ctx) throw new Error(tx("useAuth outside AuthProvider"));
     return ctx;
 }

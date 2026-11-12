@@ -7,24 +7,25 @@ import { ApiError } from '../api/client';
 import { team, type RosterUser } from '../api/team';
 import { useAuth } from '../auth';
 import Dialog, { SaveFooter } from './Dialog';
+import { tx } from '../i18n';
 
 export type MemberAction = 'terminate' | 'reactivate' | 'delete';
 
 const COPY: Record<MemberAction, { title: (n: string) => string; body: (n: string) => string; label: string; status: string; done: (n: string) => string }> = {
     terminate: {
-        title: n => `Terminate ${n}?`,
-        body: n => `${n} can no longer clock in and drops off the active roster. Their hours, pay and records are kept, and they can be reactivated at any time. An open shift should be ended first.`,
-        label: 'Terminate', status: 'terminated', done: n => `${n} was terminated`,
+        title: n => tx("Terminate {0}?", n),
+        body: n => tx("{0} can no longer clock in and drops off the active roster. Their hours, pay and records are kept, and they can be reactivated at any time. An open shift should be ended first.", n),
+        label: tx("Terminate"), status: 'terminated', done: n => tx("{0} was terminated", n),
     },
     reactivate: {
-        title: n => `Reactivate ${n}?`,
-        body: n => `${n} returns to the active roster and can clock in again.`,
-        label: 'Reactivate', status: 'active', done: n => `${n} is active again`,
+        title: n => tx("Reactivate {0}?", n),
+        body: n => tx("{0} returns to the active roster and can clock in again.", n),
+        label: tx("Reactivate"), status: 'active', done: n => tx("{0} is active again", n),
     },
     delete: {
-        title: n => `Delete ${n}?`,
-        body: n => `This permanently removes ${n} from your organization. Their payroll history is kept, but this cannot be undone. To keep someone on file without letting them clock in, terminate them instead.`,
-        label: 'Delete', status: 'deleted', done: n => `${n} was removed`,
+        title: n => tx("Delete {0}?", n),
+        body: n => tx("This permanently removes {0} from your organization. Their payroll history is kept, but this cannot be undone. To keep someone on file without letting them clock in, terminate them instead.", n),
+        label: tx("Delete"), status: 'deleted', done: n => tx("{0} was removed", n),
     },
 };
 
@@ -39,7 +40,7 @@ export default function MemberActionDialog({ user, action, onClose, onDone }: { 
         if (!session || !org) return;
         setSaving(true); setError(null);
         try { await team.updateField(session.userId, org.organization_id, user.id, 'status', c.status); onDone(c.done(name)); }
-        catch (e) { setError(e instanceof ApiError ? e.message : 'Could not save'); setSaving(false); }
+        catch (e) { setError(e instanceof ApiError ? e.message : tx("Could not save")); setSaving(false); }
     }
 
     return (

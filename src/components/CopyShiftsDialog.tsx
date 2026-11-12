@@ -13,6 +13,7 @@ import type { RosterUser } from '../api/team';
 import { useAuth } from '../auth';
 import Dialog, { SaveFooter } from './Dialog';
 import { SkeletonLines } from './Skeleton';
+import { tx, txn, hoursText } from '../i18n';
 
 const localDay = (d: Date) => { const p = (x: number) => String(x).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`; };
 // The range as instants: local start of the first day → local end of the last.
@@ -46,7 +47,7 @@ export default function CopyShiftsDialog({ people, defaultTarget, onClose, onDon
         setLoading(true);
         hoursApi.copyShifts(session.userId, org.organization_id, { sourceUserId: Number(source), targetUserId: Number(target), from: startIso(from), to: endIso(to), dryRun: true })
             .then(r => { if (stale) return; setPreview(r.shifts); setPicked(new Set(r.shifts.filter(s => !s.conflict).map(s => s.clockInId))); })
-            .catch(e => { if (!stale) { setPreview([]); setError(e instanceof ApiError ? e.message : 'Could not load the shifts'); } })
+            .catch(e => { if (!stale) { setPreview([]); setError(e instanceof ApiError ? e.message : tx("Could not load the shifts")); } })
             .finally(() => { if (!stale) setLoading(false); });
         return () => { stale = true; };
     }, [session, org, source, target, from, to, ready]);
@@ -65,52 +66,52 @@ export default function CopyShiftsDialog({ people, defaultTarget, onClose, onDon
             });
             const who = people.find(u => u.id === target)?.full_name ?? '';
             const skipped = r.skipped?.length ?? 0;
-            onDone(`Added ${r.created} ${r.created === 1 ? 'shift' : 'shifts'} to ${who}${skipped ? ` · ${skipped} skipped` : ''}`);
-        } catch (e) { setError(e instanceof ApiError ? e.message : 'Could not copy the shifts'); setSaving(false); }
+            onDone(txn(r.created, 'Added {n} shift to {0}', 'Added {n} shifts to {0}', who) + (skipped ? ' · ' + tx('{0} skipped', skipped) : ''));
+        } catch (e) { setError(e instanceof ApiError ? e.message : tx("Could not copy the shifts")); setSaving(false); }
     }
 
     const active = people.filter(u => u.status === 'active');
     return (
-        <Dialog title="Copy a coworker's shifts" wide onClose={onClose}
-            subtitle="Their completed shifts in these days are re-created for the other person: same job, times and break, at that person's own rate."
+        <Dialog title={tx("Copy a coworker's shifts")} wide onClose={onClose}
+            subtitle={tx("Their completed shifts in these days are re-created for the other person: same job, times and break, at that person's own rate.")}
             footer={<SaveFooter onCancel={onClose} onSave={save} saving={saving} disabled={!ready || loading || chosen.length === 0}
-                label={chosen.length === 0 ? 'Add shifts' : `Add ${chosen.length} ${chosen.length === 1 ? 'shift' : 'shifts'}`} />}>
+                label={chosen.length === 0 ? tx("Add shifts") : txn(chosen.length, 'Add {n} shift', 'Add {n} shifts')} />}>
             <div className="grid-2">
-                <label className="field"><span>Copy from</span>
-                    <select value={source} onChange={e => setSource(e.target.value === '' ? '' : Number(e.target.value))}><option value="">Choose</option>{active.map(u => <option key={u.id} value={u.id}>{u.full_name}</option>)}</select></label>
-                <label className="field"><span>Add to</span>
-                    <select value={target} onChange={e => setTarget(e.target.value === '' ? '' : Number(e.target.value))}><option value="">Choose</option>{active.map(u => <option key={u.id} value={u.id}>{u.full_name}</option>)}</select></label>
+                <label className="field"><span>{tx("Copy from")}</span>
+                    <select value={source} onChange={e => setSource(e.target.value === '' ? '' : Number(e.target.value))}><option value="">{tx("Choose")}</option>{active.map(u => <option key={u.id} value={u.id}>{u.full_name}</option>)}</select></label>
+                <label className="field"><span>{tx("Add to")}</span>
+                    <select value={target} onChange={e => setTarget(e.target.value === '' ? '' : Number(e.target.value))}><option value="">{tx("Choose")}</option>{active.map(u => <option key={u.id} value={u.id}>{u.full_name}</option>)}</select></label>
                 {/* Moving one end past the other drags it along, so the range stays in order. */}
-                <label className="field"><span>First day</span><input type="date" value={from} onChange={e => { const v = e.target.value; setFrom(v); if (v && to < v) setTo(v); }} /></label>
-                <label className="field"><span>Last day</span><input type="date" value={to} onChange={e => { const v = e.target.value; setTo(v); if (v && from > v) setFrom(v); }} /></label>
+                <label className="field"><span>{tx("First day")}</span><input type="date" value={from} onChange={e => { const v = e.target.value; setFrom(v); if (v && to < v) setTo(v); }} /></label>
+                <label className="field"><span>{tx("Last day")}</span><input type="date" value={to} onChange={e => { const v = e.target.value; setTo(v); if (v && from > v) setFrom(v); }} /></label>
             </div>
-            <div className="eyebrow nopad">Shifts</div>
-            {same ? <p className="muted">Pick two different people.</p>
-                : !ready ? <p className="muted">Pick the two people to see the shifts.</p>
+            <div className="eyebrow nopad">{tx("Shifts")}</div>
+            {same ? <p className="muted">{tx("Pick two different people.")}</p>
+                : !ready ? <p className="muted">{tx("Pick the two people to see the shifts.")}</p>
                 : loading || !preview ? <SkeletonLines n={4} />
-                : preview.length === 0 ? <p className="muted">No completed shifts in these days.</p>
+                : preview.length === 0 ? <p className="muted">{tx("No completed shifts in these days.")}</p>
                 : (
                     <>
                         <table className="table">
                             <tbody>
                                 {preview.map(s => (
                                     <tr key={s.clockInId} className={s.conflict ? 'row-off' : 'row-pick'} onClick={() => { if (!s.conflict) toggle(s.clockInId); }}>
-                                        <td style={{ width: 28 }}><input type="checkbox" checked={!s.conflict && picked.has(s.clockInId)} disabled={!!s.conflict} onChange={() => toggle(s.clockInId)} onClick={e => e.stopPropagation()} aria-label={`Copy the shift of ${fmtDay(s.clockIn)}`} /></td>
+                                        <td style={{ width: 28 }}><input type="checkbox" checked={!s.conflict && picked.has(s.clockInId)} disabled={!!s.conflict} onChange={() => toggle(s.clockInId)} onClick={e => e.stopPropagation()} aria-label={tx("Copy the shift of {0}", fmtDay(s.clockIn))} /></td>
                                         <td>{fmtDay(s.clockIn)}</td>
                                         <td>{s.jobName}</td>
                                         {s.conflict
-                                            ? <td colSpan={2} className="caution">{s.conflict === 'job_deleted' ? 'The job was deleted' : 'Already on their timesheet'}</td>
-                                            : <><td>{fmtTime(s.clockIn)} – {fmtTime(s.clockOut)}</td><td>{s.hours.toFixed(2)} h</td></>}
+                                            ? <td colSpan={2} className="caution">{s.conflict === 'job_deleted' ? tx("The job was deleted") : tx("Already on their timesheet")}</td>
+                                            : <><td>{fmtTime(s.clockIn)} – {fmtTime(s.clockOut)}</td><td>{hoursText(s.hours, 2)}</td></>}
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
                         {copyable.length > 0 && (
                             <div className="toolbar" style={{ marginTop: 8 }}>
-                                <span className="muted small">{chosen.length} of {copyable.length} selected · {hours.toFixed(2)} h</span>
+                                <span className="muted small">{tx('{0} of {1} selected · {2}', chosen.length, copyable.length, hoursText(hours, 2))}</span>
                                 <span className="spacer" />
                                 <button className="btn btn-sm" type="button" onClick={() => setPicked(chosen.length === copyable.length ? new Set() : new Set(copyable.map(s => s.clockInId)))}>
-                                    {chosen.length === copyable.length ? 'Clear' : 'Select all'}
+                                    {chosen.length === copyable.length ? tx("Clear") : tx("Select all")}
                                 </button>
                             </div>
                         )}

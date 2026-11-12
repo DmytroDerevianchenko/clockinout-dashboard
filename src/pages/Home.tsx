@@ -11,14 +11,15 @@ import { orgApi } from '../api/org';
 import { useAuth } from '../auth';
 import { initialsOf } from '../layout/Shell';
 import { SkeletonCards, SkeletonTable, Sk } from '../components/Skeleton';
+import { tx, lang, txn } from '../i18n';
 
 function since(iso: string | null): string {
     if (!iso) return '';
     const ms = Math.max(0, Date.now() - new Date(iso).getTime());
     const h = Math.floor(ms / 3600000), m = Math.floor((ms % 3600000) / 60000);
-    return h > 0 ? `${h} h ${m} min` : `${m} min`;
+    return h > 0 ? tx('{0} h {1} min', h, m) : tx('{0} min', m);
 }
-const startedAt = (iso: string | null) => iso ? new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '';
+const startedAt = (iso: string | null) => iso ? new Date(iso).toLocaleTimeString(lang(), { hour: 'numeric', minute: '2-digit' }) : '';
 
 export default function Home() {
     const { session, org } = useAuth();
@@ -38,7 +39,7 @@ export default function Home() {
         setRoster(null); setError(null); setOwed(null); setReceivable(null);
         team.roster(session.userId, org.organization_id)
             .then(r => { if (!cancelled) setRoster(r); })
-            .catch(e => { if (!cancelled) setError(e instanceof ApiError ? e.message : 'Could not load the team'); });
+            .catch(e => { if (!cancelled) setError(e instanceof ApiError ? e.message : tx("Could not load the team")); });
         team.owed(session.userId, org.organization_id)
             .then(r => { if (!cancelled) { const pos = r.employees.filter(e => e.owed > 0.005); setOwed({ total: pos.reduce((t, e) => t + e.owed, 0), people: pos.length }); } })
             .catch(() => { if (!cancelled) setOwed({ total: 0, people: 0 }); });
@@ -58,7 +59,7 @@ export default function Home() {
     const ot = roster.overtime;
     const watch = ot?.enabled && ot.threshold > 0 ? active.filter(u => u.week_hours >= ot.threshold * 0.9) : null;
     const over = watch ? watch.filter(u => u.week_hours >= ot.threshold).length : 0;
-    const today = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+    const today = new Date().toLocaleDateString(lang(), { weekday: 'long', month: 'long', day: 'numeric' });
 
     return (
         <>
@@ -68,41 +69,41 @@ export default function Home() {
                     <div className="hero-figure">
                         <span className={'dot' + (onClock.length ? ' live' : '')} />
                         <span className="hero-num">{onClock.length}</span>
-                        <span className="hero-unit">on the clock</span>
+                        <span className="hero-unit">{tx("on the clock")}</span>
                     </div>
-                    <div className="muted">of {active.length} active team {active.length === 1 ? 'member' : 'members'}{contractors ? ` · ${contractors} ${contractors === 1 ? 'contractor' : 'contractors'}` : ''}</div>
+                    <div className="muted">{txn(active.length, 'of {n} active team member', 'of {n} active team members')}{contractors ? ' · ' + txn(contractors, '{n} contractor', '{n} contractors') : ''}</div>
                 </div>
                 <div className="head-actions">
-                    <Link className="btn" to="/hours">Hours</Link>
-                    <Link className="btn btn-primary" to="/team">Team</Link>
+                    <Link className="btn" to="/hours">{tx("Hours")}</Link>
+                    <Link className="btn btn-primary" to="/team">{tx("Team")}</Link>
                 </div>
             </section>
 
             <div className="cards">
                 <Link className="card stat-link" to="/payroll">
-                    <div className="stat-label">Owed to crew</div>
+                    <div className="stat-label">{tx("Owed to crew")}</div>
                     {owed ? <div className={'stat' + (owed.total > 0.005 ? ' danger' : '')}>{money(owed.total)}</div> : <Sk w="60%" h={30} style={{ margin: '6px 0' }} />}
-                    <div className="faint small">{owed ? (owed.people ? `${owed.people} ${owed.people === 1 ? 'person' : 'people'} · all periods` : 'Everyone is settled') : ' '}</div>
+                    <div className="faint small">{owed ? (owed.people ? tx('{0} · all periods', txn(owed.people, '{n} person', '{n} people')) : tx("Everyone is settled")) : ' '}</div>
                 </Link>
                 <Link className="card stat-link" to="/invoices">
-                    <div className="stat-label">Clients owe you</div>
+                    <div className="stat-label">{tx("Clients owe you")}</div>
                     {receivable ? <div className="stat">{money(receivable.total)}</div> : <Sk w="60%" h={30} style={{ margin: '6px 0' }} />}
-                    <div className={'small ' + (receivable?.overdue ? 'danger' : 'faint')}>{receivable ? (receivable.count ? `${receivable.count} sent ${receivable.count === 1 ? 'invoice' : 'invoices'}${receivable.overdue ? ` · ${receivable.overdue} overdue` : ''}` : 'Nothing outstanding') : ' '}</div>
+                    <div className={'small ' + (receivable?.overdue ? 'danger' : 'faint')}>{receivable ? (receivable.count ? txn(receivable.count, '{n} sent invoice', '{n} sent invoices') + (receivable.overdue ? ' · ' + tx('{0} overdue', receivable.overdue) : '') : tx("Nothing outstanding")) : ' '}</div>
                 </Link>
                 <Link className="card stat-link" to="/team">
-                    <div className="stat-label">{watch ? 'Near or in overtime' : 'Active team members'}</div>
+                    <div className="stat-label">{watch ? tx("Near or in overtime") : tx("Active team members")}</div>
                     <div className={'stat' + (over ? ' danger' : watch?.length ? ' caution' : '')}>{watch ? watch.length : active.length}</div>
-                    <div className="faint small">{watch ? (watch.length ? `${over} over ${ot.threshold} h this week` : `Nobody near ${ot.threshold} h this week`) : `${users.length - active.length} inactive or terminated`}</div>
+                    <div className="faint small">{watch ? (watch.length ? tx("{0} over {1} h this week", over, ot.threshold) : tx("Nobody near {0} h this week", ot.threshold)) : tx("{0} inactive or terminated", users.length - active.length)}</div>
                 </Link>
             </div>
 
             <div className="card card-flush">
-                <div className="eyebrow">On the clock</div>
+                <div className="eyebrow">{tx("On the clock")}</div>
                 {onClock.length === 0 ? (
-                    <div className="empty">Nobody is clocked in right now.</div>
+                    <div className="empty">{tx("Nobody is clocked in right now.")}</div>
                 ) : (
                     <table className="table table-hover">
-                        <thead><tr><th>Name</th><th>Job</th><th>Since</th><th>Duration</th></tr></thead>
+                        <thead><tr><th>{tx("Name")}</th><th>{tx("Job")}</th><th>{tx("Since")}</th><th>{tx("Duration")}</th></tr></thead>
                         <tbody>
                             {onClock.flatMap(u => (u.active_shifts?.length ? u.active_shifts : [{ clockin_id: 0, job_id: 0, job_name: u.current_job_name, clock_in_time: u.clock_in_time ?? '' }]).map(s => (
                                 <tr key={`${u.id}-${s.clockin_id}`}>

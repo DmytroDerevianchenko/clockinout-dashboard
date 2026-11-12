@@ -12,12 +12,13 @@ import { PROVINCES } from '../api/team';
 import { useAuth, type Membership } from '../auth';
 import Dialog, { SaveFooter } from './Dialog';
 import { useToast } from './Toast';
+import { tx } from '../i18n';
 
 /** Any image → a PNG no larger than 512 px on its long side, as bare base64 (what the phones send). */
 async function toLogoBase64(file: File): Promise<string> {
     const url = URL.createObjectURL(file);
     try {
-        const img = await new Promise<HTMLImageElement>((resolve, reject) => { const i = new Image(); i.onload = () => resolve(i); i.onerror = () => reject(new Error('That file is not an image')); i.src = url; });
+        const img = await new Promise<HTMLImageElement>((resolve, reject) => { const i = new Image(); i.onload = () => resolve(i); i.onerror = () => reject(new Error(tx("That file is not an image"))); i.src = url; });
         const scale = Math.min(1, 512 / Math.max(img.naturalWidth, img.naturalHeight));
         const canvas = document.createElement('canvas');
         canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
@@ -45,25 +46,25 @@ export function OrgLogo({ row, onChanged }: { row: OrgRow; onChanged: () => void
     async function run(fn: () => Promise<unknown>, message: string) {
         setBusy(true);
         try { await fn(); toast(message); onChanged(); }
-        catch (e) { toast(e instanceof ApiError || e instanceof Error ? e.message : 'Could not do that', 'error'); }
+        catch (e) { toast(e instanceof ApiError || e instanceof Error ? e.message : tx("Could not do that"), 'error'); }
         finally { setBusy(false); }
     }
 
     return (
         <div className="kv">
-            <span>Logo</span>
+            <span>{tx("Logo")}</span>
             <div className="logo-row">
-                {src ? <img className="org-logo" src={src} alt={`${row.name} logo`} /> : <span className="faint">{row.has_logo ? 'Loading…' : 'None'}</span>}
+                {src ? <img className="org-logo" src={src} alt={`${row.name} logo`} /> : <span className="faint">{row.has_logo ? tx("Loading…") : tx("None")}</span>}
                 <input ref={input} type="file" accept="image/*" hidden onChange={e => {
                     const file = e.target.files?.[0]; e.target.value = '';
-                    if (file) run(async () => orgApi.uploadLogo(row.id, await toLogoBase64(file)), 'Logo updated');
+                    if (file) run(async () => orgApi.uploadLogo(row.id, await toLogoBase64(file)), tx('Logo updated'));
                 }} />
-                <button className="btn btn-sm" disabled={busy} onClick={() => input.current?.click()}>{row.has_logo ? 'Replace' : 'Upload'}</button>
-                {row.has_logo && <button className="btn btn-sm" disabled={busy} onClick={() => run(() => orgApi.removeLogo(row.id), 'Logo removed')}>Remove</button>}
+                <button className="btn btn-sm" disabled={busy} onClick={() => input.current?.click()}>{row.has_logo ? tx("Replace") : tx("Upload")}</button>
+                {row.has_logo && <button className="btn btn-sm" disabled={busy} onClick={() => run(() => orgApi.removeLogo(row.id), tx('Logo removed'))}>{tx("Remove")}</button>}
                 {row.has_logo && session && (
                     <label className="check" style={{ margin: 0 }}>
-                        <input type="checkbox" checked={row.logo_show} disabled={busy} onChange={e => run(() => orgApi.saveDetails(session.userId, { ...row, logo_show: e.target.checked }), e.target.checked ? 'The logo prints on invoices and paystubs' : 'The logo no longer prints')} />
-                        Print on invoices and paystubs
+                        <input type="checkbox" checked={row.logo_show} disabled={busy} onChange={e => run(() => orgApi.saveDetails(session.userId, { ...row, logo_show: e.target.checked }), e.target.checked ? tx('The logo prints on invoices and paystubs') : tx('The logo no longer prints'))} />
+                        {tx("Print on invoices and paystubs")}
                     </label>
                 )}
             </div>
@@ -83,16 +84,16 @@ export function OrgList() {
     async function makeDefault(m: Membership) {
         if (!session) return;
         setBusy(m.organization_id);
-        try { await orgApi.setDefault(session.userId, m.organization_id); await refresh(); toast(`${m.name} opens first from now on`); }
-        catch (e) { toast(e instanceof ApiError ? e.message : 'Could not do that', 'error'); }
+        try { await orgApi.setDefault(session.userId, m.organization_id); await refresh(); toast(tx("{0} opens first from now on", m.name)); }
+        catch (e) { toast(e instanceof ApiError ? e.message : tx("Could not do that"), 'error'); }
         finally { setBusy(null); }
     }
 
     return (
         <section className="card card-flush">
             <div className="person-head" style={{ padding: '16px 20px 0', marginBottom: 6 }}>
-                <h2 style={{ margin: 0 }}>Your organizations</h2>
-                <button className="btn" onClick={() => setCreating(true)}>New organization</button>
+                <h2 style={{ margin: 0 }}>{tx("Your organizations")}</h2>
+                <button className="btn" onClick={() => setCreating(true)}>{tx("New organization")}</button>
             </div>
             <table className="table">
                 <tbody>
@@ -102,12 +103,12 @@ export function OrgList() {
                         const admin = m.role === 'employer' || m.is_admin;
                         return (
                             <tr key={m.organization_id}>
-                                <td><strong>{m.name}</strong>{current && <span className="pill live">Open now</span>}{isDefault && <span className="pill">Default</span>}
-                                    <div className="faint small">{m.role === 'employer' ? 'Owner' : m.is_admin ? 'Admin' : m.role === 'accountant' ? 'Accountant' : 'Employee'}</div></td>
+                                <td><strong>{m.name}</strong>{current && <span className="pill live">{tx("Open now")}</span>}{isDefault && <span className="pill">{tx("Default")}</span>}
+                                    <div className="faint small">{m.role === 'employer' ? tx("Owner") : m.is_admin ? tx("Admin") : m.role === 'accountant' ? tx("Accountant") : tx("Employee")}</div></td>
                                 <td className="actions">
-                                    {!current && <button className="btn btn-sm" onClick={() => setOrgId(m.organization_id)}>Open</button>}
-                                    {!isDefault && <button className="btn btn-sm" disabled={busy === m.organization_id} onClick={() => makeDefault(m)}>Make default</button>}
-                                    {admin && <button className="btn btn-sm btn-danger" onClick={() => setDeleting(m)}>Delete</button>}
+                                    {!current && <button className="btn btn-sm" onClick={() => setOrgId(m.organization_id)}>{tx("Open")}</button>}
+                                    {!isDefault && <button className="btn btn-sm" disabled={busy === m.organization_id} onClick={() => makeDefault(m)}>{tx("Make default")}</button>}
+                                    {admin && <button className="btn btn-sm btn-danger" onClick={() => setDeleting(m)}>{tx("Delete")}</button>}
                                 </td>
                             </tr>
                         );
@@ -138,26 +139,26 @@ function CreateOrgDialog({ onClose }: { onClose: () => void }) {
             });
             await refresh();                                   // the new membership arrives with the session
             if (r.organizationId) setOrgId(r.organizationId);  // and the dashboard opens it
-            toast(`${f.name.trim()} was created`);
+            toast(tx("{0} was created", f.name.trim()));
             onClose();
-        } catch (e) { setError(e instanceof ApiError ? e.message : 'Could not create the organization'); setSaving(false); }
+        } catch (e) { setError(e instanceof ApiError ? e.message : tx("Could not create the organization")); setSaving(false); }
     }
 
     return (
-        <Dialog title="New organization" wide onClose={onClose} footer={<SaveFooter onCancel={onClose} onSave={save} saving={saving} label="Create" disabled={!f.name.trim()} />}
-            subtitle="You become its owner. The province decides taxes, overtime and holiday pay; pay periods are generated from the type and start day.">
-            <label className="field"><span>Name</span><input value={f.name} onChange={set('name')} autoFocus /></label>
+        <Dialog title={tx("New organization")} wide onClose={onClose} footer={<SaveFooter onCancel={onClose} onSave={save} saving={saving} label={tx("Create")} disabled={!f.name.trim()} />}
+            subtitle={tx("You become its owner. The province decides taxes, overtime and holiday pay; pay periods are generated from the type and start day.")}>
+            <label className="field"><span>{tx("Name")}</span><input value={f.name} onChange={set('name')} autoFocus /></label>
             <div className="grid-2">
-                <label className="field"><span>Province</span><select value={f.province} onChange={set('province')}>{PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}</select></label>
-                <label className="field"><span>City</span><input value={f.city} onChange={set('city')} /></label>
-                <label className="field"><span>Street</span><input value={f.street} onChange={set('street')} /></label>
-                <label className="field"><span>Postal code</span><input value={f.postal} onChange={set('postal')} /></label>
-                <label className="field"><span>Pay period</span>
-                    <select value={f.period} onChange={set('period')}><option value="weekly">Weekly</option><option value="bi_weekly">Every two weeks</option><option value="semi_monthly">Twice a month</option><option value="monthly">Monthly</option></select></label>
-                <label className="field"><span>Week starts on</span>
-                    <select value={f.startDay} onChange={set('startDay')}>{['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(d => <option key={d} value={d}>{d}</option>)}</select></label>
-                <label className="field"><span>Default employment type</span>
-                    <select value={f.type} onChange={set('type')}><option value="full_time">Full-time</option><option value="part_time">Part-time</option><option value="casual">Casual</option><option value="contractor">Contractor</option></select></label>
+                <label className="field"><span>{tx("Province")}</span><select value={f.province} onChange={set('province')}>{PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}</select></label>
+                <label className="field"><span>{tx("City")}</span><input value={f.city} onChange={set('city')} /></label>
+                <label className="field"><span>{tx("Street")}</span><input value={f.street} onChange={set('street')} /></label>
+                <label className="field"><span>{tx("Postal code")}</span><input value={f.postal} onChange={set('postal')} /></label>
+                <label className="field"><span>{tx("Pay period")}</span>
+                    <select value={f.period} onChange={set('period')}><option value="weekly">{tx("Weekly")}</option><option value="bi_weekly">{tx("Every two weeks")}</option><option value="semi_monthly">{tx("Twice a month")}</option><option value="monthly">{tx("Monthly")}</option></select></label>
+                <label className="field"><span>{tx("Week starts on")}</span>
+                    <select value={f.startDay} onChange={set('startDay')}>{['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(d => <option key={d} value={d}>{tx(d)}</option>)}</select></label>
+                <label className="field"><span>{tx("Default employment type")}</span>
+                    <select value={f.type} onChange={set('type')}><option value="full_time">{tx("Full-time")}</option><option value="part_time">{tx("Part-time")}</option><option value="casual">{tx("Casual")}</option><option value="contractor">{tx("Contractor")}</option></select></label>
             </div>
             {error && <p className="error-line">{error}</p>}
         </Dialog>
@@ -175,14 +176,14 @@ function DeleteOrgDialog({ m, onClose }: { m: Membership; onClose: () => void })
     async function go() {
         if (!session || !match) return;
         setSaving(true); setError(null);
-        try { await orgApi.remove(session.userId, m.organization_id); await refresh(); toast(`${m.name} was deleted`); onClose(); }
-        catch (e) { setError(e instanceof ApiError ? e.message : 'Could not delete the organization'); setSaving(false); }
+        try { await orgApi.remove(session.userId, m.organization_id); await refresh(); toast(tx("{0} was deleted", m.name)); onClose(); }
+        catch (e) { setError(e instanceof ApiError ? e.message : tx("Could not delete the organization")); setSaving(false); }
     }
 
     return (
-        <Dialog title={`Delete ${m.name}?`} onClose={onClose} footer={<SaveFooter onCancel={onClose} onSave={go} saving={saving} label="Delete organization" disabled={!match} />}>
-            <p className="muted">The organization disappears for you and for everyone in it: nobody can clock in, and its jobs, hours, payroll and invoices leave every screen. The records themselves are kept on the server.</p>
-            <label className="field"><span>Type the organization's name to confirm</span><input value={typed} onChange={e => setTyped(e.target.value)} placeholder={m.name} autoFocus /></label>
+        <Dialog title={tx("Delete {0}?", m.name)} onClose={onClose} footer={<SaveFooter onCancel={onClose} onSave={go} saving={saving} label={tx("Delete organization")} disabled={!match} />}>
+            <p className="muted">{tx("The organization disappears for you and for everyone in it: nobody can clock in, and its jobs, hours, payroll and invoices leave every screen. The records themselves are kept on the server.")}</p>
+            <label className="field"><span>{tx("Type the organization's name to confirm")}</span><input value={typed} onChange={e => setTyped(e.target.value)} placeholder={m.name} autoFocus /></label>
             {error && <p className="error-line">{error}</p>}
         </Dialog>
     );

@@ -15,6 +15,7 @@ import { hoursApi, fmtDay, toLocalInput, type Shift } from '../api/hours';
 import type { Job } from '../api/jobs';
 import { useAuth } from '../auth';
 import Dialog, { SaveFooter } from './Dialog';
+import { tx } from '../i18n';
 
 export default function EditShiftDialog({ shift, jobs, onClose, onDone, onChanged }: {
     shift: Shift; jobs: Job[]; onClose: () => void; onDone: (message: string) => void;
@@ -56,35 +57,35 @@ export default function EditShiftDialog({ shift, jobs, onClose, onDone, onChange
             // After the times: a time edit recalculates with the stored break.
             if (brkChanged) { await hoursApi.setBreak(session.userId, shift.out!.id, parseInt(brk) || 0); saved = true; }
             if (jobChanged) { await hoursApi.setJob(session.userId, shift.in.id, jobId); saved = true; }
-            onDone('Shift saved');
+            onDone(tx("Shift saved"));
         } catch (e) {
-            setError(e instanceof ApiError ? e.message : 'Could not save');
+            setError(e instanceof ApiError ? e.message : tx("Could not save"));
             setSaving(false);
             if (saved) onChanged();
         }
     }
 
     return (
-        <Dialog title="Edit shift" subtitle={`${shift.user_name} · ${fmtDay(shift.in.time)}. Hours and earnings are recalculated from what you change.`} wide onClose={onClose}
+        <Dialog title={tx("Edit shift")} subtitle={tx("{0} · {1}. Hours and earnings are recalculated from what you change.", shift.user_name, fmtDay(shift.in.time))} wide onClose={onClose}
             footer={<SaveFooter onCancel={onClose} onSave={save} saving={saving} disabled={!dirty || invalid} />}>
             <div className="grid-2">
-                <label className="field"><span>Job</span>
+                <label className="field"><span>{tx("Job")}</span>
                     <select value={jobId} disabled={!done} onChange={e => setJobId(Number(e.target.value))}>
                         {options.map(j => <option key={j.id} value={j.id}>{j.name}{j.archived ? ' (archived)' : ''}</option>)}
-                        {!options.some(j => j.id === shift.job_id) && <option value={shift.job_id}>{shift.job_name ?? 'This job'}</option>}
+                        {!options.some(j => j.id === shift.job_id) && <option value={shift.job_id}>{shift.job_name ?? tx("This job")}</option>}
                     </select>
-                    {!done && <small className="muted">Still on the clock: end the shift first to change its job.</small>}
+                    {!done && <small className="muted">{tx("Still on the clock: end the shift first to change its job.")}</small>}
                 </label>
-                <label className="field"><span>Break (minutes)</span>
+                <label className="field"><span>{tx("Break (minutes)")}</span>
                     <input inputMode="numeric" value={brk} disabled={!done} onFocus={e => e.currentTarget.select()} onChange={e => setBrk(e.target.value.replace(/\D/g, ''))} />
-                    {!done && <small className="muted">Set when the shift ends.</small>}
+                    {!done && <small className="muted">{tx("Set when the shift ends.")}</small>}
                 </label>
-                <label className="field"><span>Clock in</span><input type="datetime-local" value={tin} onChange={e => setTin(e.target.value)} /></label>
-                <label className="field"><span>Clock out</span>
+                <label className="field"><span>{tx("Clock in")}</span><input type="datetime-local" value={tin} onChange={e => setTin(e.target.value)} /></label>
+                <label className="field"><span>{tx("Clock out")}</span>
                     {done ? <input type="datetime-local" value={tout} onChange={e => setTout(e.target.value)} /> : <input value="Still on the clock" disabled />}
                 </label>
             </div>
-            {done && outIso && inIso && outIso <= inIso && <p className="error-line">Clock out must be after clock in.</p>}
+            {done && outIso && inIso && outIso <= inIso && <p className="error-line">{tx("Clock out must be after clock in.")}</p>}
             {error && <p className="error-line">{error}</p>}
         </Dialog>
     );

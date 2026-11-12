@@ -3,6 +3,7 @@
 // (payroll.service calcUserPeriod), the same rows the phones read.
 // ============================================================
 import { api, apiGet } from './client';
+import { lang, hoursText } from '../i18n';
 
 export type PayrollHoliday = { date: string; name: string; hoursWorked: number; holidayPay: number; premium: number; eligible?: boolean; reason?: string | null };
 export type CustomDeduction = { name: string; amount: number };
@@ -50,9 +51,9 @@ export const payroll = {
 };
 
 export const n = (v: unknown): number => (v == null || v === '' ? 0 : Number(v));
-export const money = (v: unknown) => `$${n(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-export const hours = (v: unknown) => `${n(v).toFixed(1)} h`;
+export const money = (v: unknown) => `$${n(v).toLocaleString(lang(), { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+export const hours = (v: unknown) => hoursText(n(v));
 export const periodLabel = (p: { start_date: string; end_date: string }) => {
-    const f = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'America/Toronto' });
+    const f = (iso: string) => new Date(iso).toLocaleDateString(lang(), { month: 'short', day: 'numeric', timeZone: 'America/Toronto' });
     return `${f(p.start_date)} – ${f(p.end_date)}`;
 };

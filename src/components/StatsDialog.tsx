@@ -11,8 +11,9 @@ import { useAuth } from '../auth';
 import Dialog from './Dialog';
 import { SkeletonCards, SkeletonLines } from './Skeleton';
 import { useToast } from './Toast';
+import { tx, lang, txn } from '../i18n';
 
-const hrs = (v: number) => `${v.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} h`;
+const hrs = (v: number) => tx('{0} h', v.toLocaleString(lang(), { minimumFractionDigits: 1, maximumFractionDigits: 1 }));
 
 function Tiles({ items }: { items: { label: string; value: string; tone?: 'danger' | 'caution' }[] }) {
     return <div className="tiles">{items.map(i => <div key={i.label} className="tile"><div className="stat-label">{i.label}</div><div className={'stat stat-sm' + (i.tone ? ` ${i.tone}` : '')}>{i.value}</div></div>)}</div>;
@@ -53,7 +54,7 @@ function Months({ title, rows }: { title: string; rows: { month: number; label: 
                     </div>
                 ))}
             </div>
-            <p className="faint small">Highest month: {rows.length ? money(max) : '—'}. Point at a column for its amount.</p>
+            <p className="faint small">{tx("Highest month:")} {rows.length ? money(max) : '—'}{tx(". Point at a column for its amount.")}</p>
         </>
     );
 }
@@ -68,7 +69,7 @@ function useYearStats<T extends { year: number; available_years: number[] }>(loa
         if (!session || !org) return;
         let stale = false;
         setData(null); setError(null);
-        load(year).then(r => { if (!stale) setData(r); }).catch(e => { if (!stale) setError(e instanceof ApiError ? e.message : 'Could not load the statistics'); });
+        load(year).then(r => { if (!stale) setData(r); }).catch(e => { if (!stale) setError(e instanceof ApiError ? e.message : tx("Could not load the statistics")); });
         return () => { stale = true; };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [session, org, year]);
@@ -87,15 +88,15 @@ function Frame({ title, onClose, years, year, onYear, exports, error, loading, c
                 {exports?.map(x => (
                     <button key={x.label} className="btn" disabled={busy === x.label || loading} onClick={async () => {
                         setBusy(x.label);
-                        try { const url = await x.run(); if (url) window.open(url, '_blank', 'noopener'); else toast('Nothing to export', 'error'); }
-                        catch (e) { toast(e instanceof ApiError ? e.message : 'Could not export', 'error'); }
+                        try { const url = await x.run(); if (url) window.open(url, '_blank', 'noopener'); else toast(tx("Nothing to export"), 'error'); }
+                        catch (e) { toast(e instanceof ApiError ? e.message : tx("Could not export"), 'error'); }
                         finally { setBusy(null); }
-                    }}>{busy === x.label ? 'Preparing…' : x.label}</button>
+                    }}>{busy === x.label ? tx("Preparing…") : x.label}</button>
                 ))}
-                <button className="btn btn-primary" onClick={onClose}>Close</button>
+                <button className="btn btn-primary" onClick={onClose}>{tx("Close")}</button>
             </>}>
             {years && years.length > 0 && onYear && (
-                <label className="field inline" style={{ marginBottom: 12 }}><span>Year</span>
+                <label className="field inline" style={{ marginBottom: 12 }}><span>{tx("Year")}</span>
                     <select value={year ?? ''} onChange={e => onYear(Number(e.target.value))}>{years.map(y => <option key={y} value={y}>{y}</option>)}</select></label>
             )}
             {error ? <p className="error-line">{error}</p> : loading ? <><SkeletonCards n={3} /><SkeletonLines n={5} /></> : children}
@@ -107,15 +108,15 @@ export function TeamStatsDialog({ onClose }: { onClose: () => void }) {
     const { session, org } = useAuth();
     const { data, error, year, setYear } = useYearStats<TeamStats>(y => statsApi.team(session!.userId, org!.organization_id, y));
     return (
-        <Frame title="Team statistics" onClose={onClose} years={data?.available_years} year={year} onYear={setYear} error={error} loading={!data}
+        <Frame title={tx("Team statistics")} onClose={onClose} years={data?.available_years} year={year} onYear={setYear} error={error} loading={!data}
             exports={session && org ? [
-                { label: 'CSV', run: async () => (await statsApi.teamCsv(session.userId, org.organization_id, year)).csv_url },
-                { label: 'PDF', run: async () => { const r = await statsApi.teamPdf(session.userId, org.organization_id, year); return r.pdf_url ?? r.pdfUrl; } },
+                { label: tx("CSV"), run: async () => (await statsApi.teamCsv(session.userId, org.organization_id, year)).csv_url },
+                { label: tx("PDF"), run: async () => { const r = await statsApi.teamPdf(session.userId, org.organization_id, year); return r.pdf_url ?? r.pdfUrl; } },
             ] : []}>
             {data && <>
-                <Tiles items={[{ label: 'Hours worked', value: hrs(data.totals.hours) }, { label: 'Earned', value: money(data.totals.earned) }, { label: 'Shifts', value: String(data.totals.shifts) }, { label: 'Active members', value: String(data.totals.active_members) }]} />
-                <Bars title="Hours by person" empty="No hours this year." rows={data.leaderboard.map(p => ({ key: p.user_id, label: p.full_name, sub: `${employmentLabel(p.employment_type)} · ${p.shifts} ${p.shifts === 1 ? 'shift' : 'shifts'} · ${money(p.earned)}`, value: p.hours, text: hrs(p.hours) }))} />
-                <Bars title="Headcount by employment type" empty="Nobody on the team yet." rows={data.headcount.map(h => ({ key: h.employment_type, label: h.employment_type === 'unspecified' ? 'Not set' : employmentLabel(h.employment_type), value: h.count, text: String(h.count) }))} />
+                <Tiles items={[{ label: tx("Hours worked"), value: hrs(data.totals.hours) }, { label: tx("Earned"), value: money(data.totals.earned) }, { label: tx("Shifts"), value: String(data.totals.shifts) }, { label: tx("Active members"), value: String(data.totals.active_members) }]} />
+                <Bars title={tx("Hours by person")} empty={tx("No hours this year.")} rows={data.leaderboard.map(p => ({ key: p.user_id, label: p.full_name, sub: `${employmentLabel(p.employment_type)} · ${txn(p.shifts, '{n} shift', '{n} shifts')} · ${money(p.earned)}`, value: p.hours, text: hrs(p.hours) }))} />
+                <Bars title={tx("Headcount by employment type")} empty={tx("Nobody on the team yet.")} rows={data.headcount.map(h => ({ key: h.employment_type, label: h.employment_type === 'unspecified' ? tx("Not set") : employmentLabel(h.employment_type), value: h.count, text: String(h.count) }))} />
             </>}
         </Frame>
     );
@@ -125,14 +126,14 @@ export function PayrollStatsDialog({ onClose }: { onClose: () => void }) {
     const { session, org } = useAuth();
     const { data, error, year, setYear } = useYearStats<PayrollStats>(y => statsApi.payroll(session!.userId, org!.organization_id, y));
     const t = data?.tax_components;
-    const taxes = t ? [['Income tax', t.income_tax], ['CPP', t.cpp], ['EI', t.ei], ['Social Security', t.ss], ['Medicare', t.medicare], ['Other deductions', t.other]].filter(([, v]) => Number(v) > 0.004) as [string, number][] : [];
+    const taxes = t ? [[tx("Income tax"), t.income_tax], [tx("CPP"), t.cpp], [tx("EI"), t.ei], [tx("Social Security"), t.ss], [tx("Medicare"), t.medicare], [tx("Other deductions"), t.other]].filter(([, v]) => Number(v) > 0.004) as [string, number][] : [];
     return (
-        <Frame title="Payroll statistics" onClose={onClose} years={data?.available_years} year={year} onYear={setYear} error={error} loading={!data}
-            exports={session && org ? [{ label: 'PDF', run: async () => { const r = await statsApi.payrollPdf(session.userId, org.organization_id, year); return r.pdf_url ?? r.pdfUrl; } }] : []}>
+        <Frame title={tx("Payroll statistics")} onClose={onClose} years={data?.available_years} year={year} onYear={setYear} error={error} loading={!data}
+            exports={session && org ? [{ label: tx("PDF"), run: async () => { const r = await statsApi.payrollPdf(session.userId, org.organization_id, year); return r.pdf_url ?? r.pdfUrl; } }] : []}>
             {data && <>
-                <Tiles items={[{ label: 'Gross', value: money(data.totals.gross) }, { label: 'Withheld', value: money(data.totals.withheld) }, { label: 'Net', value: money(data.totals.net) }, { label: 'Paid out', value: money(data.totals.paid) }]} />
-                <Bars title="Where the withholding went" empty="Nothing was withheld this year." rows={taxes.map(([label, v]) => ({ key: label, label, value: v, text: money(v) }))} />
-                <Bars title={`Gross by person (${data.totals.employees})`} empty="No payroll this year." rows={data.employees.map(e => ({ key: e.user_id, label: e.full_name, sub: `net ${money(e.net)} · paid ${money(e.paid)}`, value: e.gross, text: money(e.gross) }))} />
+                <Tiles items={[{ label: tx("Gross"), value: money(data.totals.gross) }, { label: tx("Withheld"), value: money(data.totals.withheld) }, { label: tx("Net"), value: money(data.totals.net) }, { label: tx("Paid out"), value: money(data.totals.paid) }]} />
+                <Bars title={tx("Where the withholding went")} empty={tx("Nothing was withheld this year.")} rows={taxes.map(([label, v]) => ({ key: label, label, value: v, text: money(v) }))} />
+                <Bars title={tx("Gross by person ({0})", data.totals.employees)} empty={tx("No payroll this year.")} rows={data.employees.map(e => ({ key: e.user_id, label: e.full_name, sub: tx('net {0} · paid {1}', money(e.net), money(e.paid)), value: e.gross, text: money(e.gross) }))} />
             </>}
         </Frame>
     );
@@ -142,12 +143,12 @@ export function PaymentStatsDialog({ onClose }: { onClose: () => void }) {
     const { session, org } = useAuth();
     const { data, error, year, setYear } = useYearStats<PaymentStats>(y => statsApi.payments(session!.userId, org!.organization_id, y));
     return (
-        <Frame title="Payment statistics" onClose={onClose} years={data?.available_years} year={year} onYear={setYear} error={error} loading={!data}
-            exports={session && org ? [{ label: 'PDF', run: async () => { const r = await statsApi.paymentsPdf(session.userId, org.organization_id, year); return r.pdf_url ?? r.pdfUrl; } }] : []}>
+        <Frame title={tx("Payment statistics")} onClose={onClose} years={data?.available_years} year={year} onYear={setYear} error={error} loading={!data}
+            exports={session && org ? [{ label: tx("PDF"), run: async () => { const r = await statsApi.paymentsPdf(session.userId, org.organization_id, year); return r.pdf_url ?? r.pdfUrl; } }] : []}>
             {data && <>
-                <Tiles items={[{ label: 'Paid out', value: money(data.totals.paid) }, { label: 'Payments', value: String(data.totals.count) }, { label: 'Average payment', value: money(data.totals.count ? data.totals.paid / data.totals.count : 0) }]} />
-                <Months title="By month" rows={data.monthly} />
-                <Bars title="By method" empty="No payments this year." rows={data.methods.map(m => ({ key: m.method, label: methodLabel(m.method), sub: `${m.count} ${m.count === 1 ? 'payment' : 'payments'}`, value: m.total, text: money(m.total) }))} />
+                <Tiles items={[{ label: tx("Paid out"), value: money(data.totals.paid) }, { label: tx("Payments"), value: String(data.totals.count) }, { label: tx("Average payment"), value: money(data.totals.count ? data.totals.paid / data.totals.count : 0) }]} />
+                <Months title={tx("By month")} rows={data.monthly} />
+                <Bars title={tx("By method")} empty={tx("No payments this year.")} rows={data.methods.map(m => ({ key: m.method, label: methodLabel(m.method), sub: txn(m.count, '{n} payment', '{n} payments'), value: m.total, text: money(m.total) }))} />
             </>}
         </Frame>
     );
@@ -157,10 +158,10 @@ export function InvoiceStatsDialog({ onClose }: { onClose: () => void }) {
     const { session, org } = useAuth();
     const { data, error, year, setYear } = useYearStats<InvoiceStats>(y => statsApi.invoices(session!.userId, org!.organization_id, y));
     return (
-        <Frame title="Invoice statistics" onClose={onClose} years={data?.available_years} year={year} onYear={setYear} error={error} loading={!data}>
+        <Frame title={tx("Invoice statistics")} onClose={onClose} years={data?.available_years} year={year} onYear={setYear} error={error} loading={!data}>
             {data && <>
-                <Tiles items={[{ label: 'Billed', value: money(data.totals.billed) }, { label: 'Paid', value: money(data.totals.paid) }, { label: 'Outstanding', value: money(data.totals.outstanding) }, { label: 'Overdue', value: money(data.totals.overdue), tone: data.totals.overdue > 0.004 ? 'danger' : undefined }]} />
-                <Bars title={`Billed by client (${data.totals.invoice_count} ${data.totals.invoice_count === 1 ? 'invoice' : 'invoices'})`} empty="Nothing billed this year." rows={data.by_client.map(c => ({ key: c.client_name, label: c.client_name, sub: `${c.count} ${c.count === 1 ? 'invoice' : 'invoices'}`, value: c.total, text: money(c.total) }))} />
+                <Tiles items={[{ label: tx("Billed"), value: money(data.totals.billed) }, { label: tx("Paid"), value: money(data.totals.paid) }, { label: tx("Outstanding"), value: money(data.totals.outstanding) }, { label: tx("Overdue"), value: money(data.totals.overdue), tone: data.totals.overdue > 0.004 ? 'danger' : undefined }]} />
+                <Bars title={tx('Billed by client ({0})', txn(data.totals.invoice_count, '{n} invoice', '{n} invoices'))} empty={tx("Nothing billed this year.")} rows={data.by_client.map(c => ({ key: c.client_name, label: c.client_name, sub: txn(c.count, '{n} invoice', '{n} invoices'), value: c.total, text: money(c.total) }))} />
             </>}
         </Frame>
     );
@@ -173,15 +174,15 @@ export function JobStatsDialog({ jobId, onClose }: { jobId: number; onClose: () 
     useEffect(() => {
         if (!session || !org) return;
         let stale = false;
-        statsApi.job(session.userId, org.organization_id, jobId).then(r => { if (!stale) setData(r); }).catch(e => { if (!stale) setError(e instanceof ApiError ? e.message : 'Could not load the statistics'); });
+        statsApi.job(session.userId, org.organization_id, jobId).then(r => { if (!stale) setData(r); }).catch(e => { if (!stale) setError(e instanceof ApiError ? e.message : tx("Could not load the statistics")); });
         return () => { stale = true; };
     }, [session, org, jobId]);
     return (
-        <Frame title={data ? `${data.job_name} · statistics` : 'Job statistics'} onClose={onClose} error={error} loading={!data}
-            exports={session && org ? [{ label: 'PDF', run: async () => { const r = await statsApi.jobPdf(session.userId, org.organization_id, jobId); return r.pdf_url ?? r.pdfUrl; } }] : []}>
+        <Frame title={data ? tx('{0} · statistics', data.job_name) : tx("Job statistics")} onClose={onClose} error={error} loading={!data}
+            exports={session && org ? [{ label: tx("PDF"), run: async () => { const r = await statsApi.jobPdf(session.userId, org.organization_id, jobId); return r.pdf_url ?? r.pdfUrl; } }] : []}>
             {data && <>
-                <Tiles items={[{ label: 'Hours', value: hrs(data.totals.hours) }, { label: 'Labour cost', value: money(data.totals.earned) }, { label: 'Shifts', value: String(data.totals.shifts) }, { label: 'People', value: String(data.totals.workers) }]} />
-                <Bars title="Hours by person" empty="Nobody has worked on this job yet." rows={data.workers.map(w => ({ key: w.user_id, label: w.full_name, sub: `${w.shifts} ${w.shifts === 1 ? 'shift' : 'shifts'} · ${money(w.earned)}${w.last_worked ? ` · last ${dateOnly(w.last_worked)}` : ''}`, value: w.hours, text: hrs(w.hours) }))} />
+                <Tiles items={[{ label: tx("Hours"), value: hrs(data.totals.hours) }, { label: tx("Labour cost"), value: money(data.totals.earned) }, { label: tx("Shifts"), value: String(data.totals.shifts) }, { label: tx("People"), value: String(data.totals.workers) }]} />
+                <Bars title={tx("Hours by person")} empty={tx("Nobody has worked on this job yet.")} rows={data.workers.map(w => ({ key: w.user_id, label: w.full_name, sub: `${txn(w.shifts, '{n} shift', '{n} shifts')} · ${money(w.earned)}${w.last_worked ? ' · ' + tx('last {0}', dateOnly(w.last_worked)) : ''}`, value: w.hours, text: hrs(w.hours) }))} />
             </>}
         </Frame>
     );

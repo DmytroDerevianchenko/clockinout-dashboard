@@ -11,6 +11,7 @@ import { useAuth } from '../auth';
 import Dialog, { SaveFooter } from '../components/Dialog';
 import { SkeletonLines } from '../components/Skeleton';
 import { ClientDialog } from './Clients';
+import { tx } from '../i18n';
 
 type Line = { description: string; quantity: string; unit: string; unitPrice: string };
 const r2 = (v: number) => Math.round(v * 100) / 100;
@@ -51,7 +52,7 @@ export default function InvoiceEditor({ invoiceId, copyOf, clientId: startClient
                 setNotes(inv.notes ?? ''); setTerms(inv.terms ?? '');
             }
             setLoaded(true);
-        }).catch(e => setError(e instanceof ApiError ? e.message : 'Could not load'));
+        }).catch(e => setError(e instanceof ApiError ? e.message : tx("Could not load")));
     }, [session, org, invoiceId, copyOf]);
 
     // A newly chosen client brings its tax rate and terms (not when editing an existing draft's client).
@@ -71,7 +72,7 @@ export default function InvoiceEditor({ invoiceId, copyOf, clientId: startClient
         if (!session || !org || clientId === '') return;
         setSaving(true); setError(null);
         const items: InvoiceItem[] = lines.filter(l => l.description.trim()).map(l => ({ description: l.description.trim(), quantity: Number(l.quantity) || 0, unit: l.unit.trim() || null, unitPrice: Number(l.unitPrice) || 0 }));
-        if (items.length === 0) { setError('Add at least one line.'); setSaving(false); return; }
+        if (items.length === 0) { setError(tx("Add at least one line.")); setSaving(false); return; }
         const body: InvoiceInput = {
             clientId: Number(clientId), jobId: jobId === '' ? null : Number(jobId), items, taxRate: (Number(taxRate) || 0) / 100,
             issueDate: issueDate || null, dueDate: dueDate || null, notes: notes.trim() || null, terms: terms.trim() || null, currencyCode: 'CAD',
@@ -80,41 +81,41 @@ export default function InvoiceEditor({ invoiceId, copyOf, clientId: startClient
             if (invoiceId) await invoicesApi.update(session.userId, org.organization_id, invoiceId, body);
             else await invoicesApi.create(session.userId, org.organization_id, body);
             onDone();
-        } catch (e) { setError(e instanceof ApiError ? e.message : 'Could not save'); setSaving(false); }
+        } catch (e) { setError(e instanceof ApiError ? e.message : tx("Could not save")); setSaving(false); }
     }
 
     return (
-        <Dialog title={invoiceId ? 'Edit draft' : copyOf ? 'Copy of invoice' : 'New invoice'} wide onClose={onClose}
-            subtitle="Saved as a draft. Leave the dates blank: they become the day you send it and the client's terms."
-            footer={<SaveFooter onCancel={onClose} onSave={save} saving={saving} disabled={!loaded || clientId === ''} label={invoiceId ? 'Save' : 'Create draft'} />}>
+        <Dialog title={invoiceId ? tx("Edit draft") : copyOf ? tx("Copy of invoice") : tx("New invoice")} wide onClose={onClose}
+            subtitle={tx("Saved as a draft. Leave the dates blank: they become the day you send it and the client's terms.")}
+            footer={<SaveFooter onCancel={onClose} onSave={save} saving={saving} disabled={!loaded || clientId === ''} label={invoiceId ? tx("Save") : tx("Create draft")} />}>
             {!loaded ? <SkeletonLines n={4} /> : (
                 <>
                     <div className="grid-2">
-                        <label className="field"><span>Client</span>
+                        <label className="field"><span>{tx("Client")}</span>
                             <div className="inline-row">
                                 <select value={clientId} onChange={e => { const id = e.target.value === '' ? '' : Number(e.target.value); setClientId(id); const c = clients.find(x => x.id === id); if (c && !invoiceId) { if (c.default_tax_rate != null) setTaxRate(String(r2(Number(c.default_tax_rate) * 100))); } }}>
-                                    <option value="">Choose a client</option>
+                                    <option value="">{tx("Choose a client")}</option>
                                     {clients.map(c => <option key={c.id} value={c.id}>{c.company_name}</option>)}
                                 </select>
-                                <button type="button" className="btn btn-sm" onClick={() => setNewClient(true)}>New</button>
+                                <button type="button" className="btn btn-sm" onClick={() => setNewClient(true)}>{tx("New")}</button>
                             </div>
-                            {client && !client.email && <small className="caution">This client has no email; add one before sending.</small>}
+                            {client && !client.email && <small className="caution">{tx("This client has no email; add one before sending.")}</small>}
                         </label>
-                        <label className="field"><span>Job (optional)</span>
+                        <label className="field"><span>{tx("Job (optional)")}</span>
                             <select value={jobId} onChange={e => setJobId(e.target.value === '' ? '' : Number(e.target.value))}>
-                                <option value="">No job</option>
+                                <option value="">{tx("No job")}</option>
                                 {jobs.map(j => <option key={j.id} value={j.id}>{j.name}</option>)}
                             </select>
                         </label>
                     </div>
 
-                    <div className="eyebrow nopad">Items</div>
+                    <div className="eyebrow nopad">{tx("Items")}</div>
                     <table className="table lines">
-                        <thead><tr><th>Description</th><th style={{ width: 80 }}>Qty</th><th style={{ width: 70 }}>Unit</th><th style={{ width: 120 }}>Unit price</th><th style={{ width: 110 }}>Amount</th><th /></tr></thead>
+                        <thead><tr><th>{tx("Description")}</th><th style={{ width: 80 }}>{tx("Qty")}</th><th style={{ width: 70 }}>{tx("Unit")}</th><th style={{ width: 120 }}>{tx("Unit price")}</th><th style={{ width: 110 }}>{tx("Amount")}</th><th /></tr></thead>
                         <tbody>
                             {lines.map((l, i) => (
                                 <tr key={i}>
-                                    <td><textarea rows={2} value={l.description} onChange={e => setLine(i, 'description', e.target.value)} placeholder="Framing services – Stage 2 of 4" /></td>
+                                    <td><textarea rows={2} value={l.description} onChange={e => setLine(i, 'description', e.target.value)} placeholder={tx("Framing services – Stage 2 of 4")} /></td>
                                     <td><input inputMode="decimal" value={l.quantity} onChange={e => setLine(i, 'quantity', e.target.value.replace(/[^0-9.]/g, ''))} /></td>
                                     <td><input value={l.unit} onChange={e => setLine(i, 'unit', e.target.value)} /></td>
                                     <td><input inputMode="decimal" value={l.unitPrice} onChange={e => setLine(i, 'unitPrice', e.target.value.replace(/[^0-9.]/g, ''))} /></td>
@@ -124,17 +125,17 @@ export default function InvoiceEditor({ invoiceId, copyOf, clientId: startClient
                             ))}
                         </tbody>
                     </table>
-                    <button type="button" className="btn btn-sm" onClick={() => setLines(ls => [...ls, emptyLine()])}>Add a line</button>
+                    <button type="button" className="btn btn-sm" onClick={() => setLines(ls => [...ls, emptyLine()])}>{tx("Add a line")}</button>
 
                     <div className="grid-2" style={{ marginTop: 14 }}>
-                        <label className="field"><span>Tax rate (%)</span><input inputMode="decimal" value={taxRate} onChange={e => setTaxRate(e.target.value.replace(/[^0-9.]/g, ''))} /></label>
-                        <div className="field"><span>Totals</span>
-                            <div className="rvalue">Subtotal {money(subtotal)} · Tax {money(tax)} · <strong>Total {money(total)}</strong></div></div>
-                        <label className="field"><span>Issue date</span><input type="date" value={issueDate} onChange={e => onIssueDate(e.target.value)} /><small className="muted">Blank = the day it is sent.</small></label>
-                        <label className="field"><span>Due date</span><input type="date" value={dueDate} onChange={e => { setDueDate(e.target.value); setDueTouched(true); }} /><small className="muted">Blank = issue date + {client?.payment_terms_days ?? 30} days.</small></label>
+                        <label className="field"><span>{tx("Tax rate (%)")}</span><input inputMode="decimal" value={taxRate} onChange={e => setTaxRate(e.target.value.replace(/[^0-9.]/g, ''))} /></label>
+                        <div className="field"><span>{tx("Totals")}</span>
+                            <div className="rvalue">{tx("Subtotal")} {money(subtotal)} {tx("· Tax")} {money(tax)} · <strong>{tx("Total")} {money(total)}</strong></div></div>
+                        <label className="field"><span>{tx("Issue date")}</span><input type="date" value={issueDate} onChange={e => onIssueDate(e.target.value)} /><small className="muted">{tx("Blank = the day it is sent.")}</small></label>
+                        <label className="field"><span>{tx("Due date")}</span><input type="date" value={dueDate} onChange={e => { setDueDate(e.target.value); setDueTouched(true); }} /><small className="muted">{tx("Blank = issue date +")} {client?.payment_terms_days ?? 30} {tx("days.")}</small></label>
                     </div>
-                    <label className="field"><span>Notes (printed on the invoice)</span><textarea rows={2} value={notes} onChange={e => setNotes(e.target.value)} /></label>
-                    <label className="field"><span>Terms</span><input value={terms} onChange={e => setTerms(e.target.value)} placeholder="Payable within 30 days by e-transfer." /></label>
+                    <label className="field"><span>{tx("Notes (printed on the invoice)")}</span><textarea rows={2} value={notes} onChange={e => setNotes(e.target.value)} /></label>
+                    <label className="field"><span>{tx("Terms")}</span><input value={terms} onChange={e => setTerms(e.target.value)} placeholder={tx("Payable within 30 days by e-transfer.")} /></label>
                     {error && <p className="error-line">{error}</p>}
                 </>
             )}

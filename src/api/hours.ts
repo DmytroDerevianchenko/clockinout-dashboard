@@ -2,6 +2,7 @@
 // phone's View Hours screen. The server returns one row per ACTION (Clock
 // In, Clock Out); shifts are paired here, as the phone does.
 import { api, apiGet } from './client';
+import { lang } from '../i18n';
 
 export type ClockRow = {
     id: number; time: string; user_id: number; user_name: string; user_type: string | null;
@@ -55,7 +56,7 @@ export function pairShifts(rows: ClockRow[]): Shift[] {
     return out.sort((a, b) => b.in.time.localeCompare(a.in.time));
 }
 
-export const fmtTime = (iso: string) => new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-export const fmtDay  = (iso: string) => new Date(iso).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+export const fmtTime = (iso: string) => new Date(iso).toLocaleTimeString(lang(), { hour: 'numeric', minute: '2-digit' });
+export const fmtDay  = (iso: string) => new Date(iso).toLocaleDateString(lang(), { weekday: 'short', month: 'short', day: 'numeric' });
 /** ISO local string for <input type="datetime-local"> */
 export const toLocalInput = (iso: string) => { const d = new Date(iso); const p = (x: number) => String(x).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`; };

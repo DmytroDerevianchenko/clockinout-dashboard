@@ -15,6 +15,7 @@
 // The robust upgrade is Google Places with a referrer-restricted key —
 // swap the fetch below; nothing else changes.)
 import { useEffect, useRef, useState } from 'react';
+import { tx } from '../i18n';
 
 export type FoundAddress = {
     label: string;            // "290 Bremner Boulevard, Toronto, Ontario"
@@ -36,7 +37,7 @@ function toAddress(h: Hit): FoundAddress {
     };
 }
 
-export default function AddressSearch({ onPick, placeholder = 'Search for an address', autoFocus }: { onPick: (a: FoundAddress) => void; placeholder?: string; autoFocus?: boolean }) {
+export default function AddressSearch({ onPick, placeholder = tx('Search for an address'), autoFocus }: { onPick: (a: FoundAddress) => void; placeholder?: string; autoFocus?: boolean }) {
     const [q, setQ] = useState('');
     const [results, setResults] = useState<FoundAddress[] | null>(null);
     const [busy, setBusy] = useState(false);
@@ -53,7 +54,7 @@ export default function AddressSearch({ onPick, placeholder = 'Search for an add
         setBusy(true); setFailed(false);
         try {
             const r = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(text)}&format=jsonv2&addressdetails=1&limit=6&countrycodes=ca,us&accept-language=en`, { signal: c.signal, headers: { Accept: 'application/json' } });
-            if (!r.ok) throw new Error('lookup failed');
+            if (!r.ok) throw new Error(tx("lookup failed"));
             const hits = (await r.json()) as Hit[];
             const seen = new Set<string>();
             setResults(hits.map(toAddress).filter(a => Number.isFinite(a.lat) && Number.isFinite(a.lon) && !seen.has(a.label) && !!seen.add(a.label)));
@@ -71,21 +72,21 @@ export default function AddressSearch({ onPick, placeholder = 'Search for an add
     return (
         <div className="addr" ref={box}>
             <div className="inline-row">
-                <input className="search" value={q} placeholder={placeholder} autoFocus={autoFocus} autoComplete="off" aria-label="Search for an address"
+                <input className="search" value={q} placeholder={placeholder} autoFocus={autoFocus} autoComplete="off" aria-label={tx("Search for an address")}
                     onChange={e => { setQ(e.target.value); setFailed(false); }}
                     onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); search(); } else if (e.key === 'Escape') setResults(null); }} />
-                <button type="button" className="btn" disabled={busy || q.trim().length < 4} onClick={search}>{busy ? 'Searching…' : 'Search'}</button>
+                <button type="button" className="btn" disabled={busy || q.trim().length < 4} onClick={search}>{busy ? tx("Searching…") : tx("Search")}</button>
             </div>
             {results && (
                 <div className="addr-list" role="listbox">
-                    {results.length === 0 ? <div className="addr-none">No address found. Try adding the city, or type it in the fields below.</div> : results.map(a => (
+                    {results.length === 0 ? <div className="addr-none">{tx("No address found. Try adding the city, or type it in the fields below.")}</div> : results.map(a => (
                         <button key={`${a.label}-${a.lat}`} type="button" role="option" aria-selected="false" className="menu-item" onClick={() => { onPick(a); setQ(''); setResults(null); }}>
                             {a.label}{a.postalCode && <span className="faint small"> · {a.postalCode}</span>}
                         </button>
                     ))}
                 </div>
             )}
-            {failed && <div className="caution small" style={{ marginTop: 4 }}>The address lookup is not answering right now. Type the address in the fields below.</div>}
+            {failed && <div className="caution small" style={{ marginTop: 4 }}>{tx("The address lookup is not answering right now. Type the address in the fields below.")}</div>}
         </div>
     );
 }

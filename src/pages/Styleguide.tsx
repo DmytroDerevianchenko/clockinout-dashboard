@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { NAV, NAV_ICONS, initialsOf } from '../layout/Shell';
 import Dialog, { SaveFooter } from '../components/Dialog';
 import ThemeSwitch from '../components/ThemeSwitch';
+import LangSwitch from '../components/LangSwitch';
 import RowMenu from '../components/Menu';
 import AddressSearch, { type FoundAddress } from '../components/AddressSearch';
 import MapView from '../components/MapView';
@@ -39,7 +40,7 @@ export default function Styleguide() {
                 {NAV.map(n => (
                     <a key={n.to} href="#" onClick={e => { e.preventDefault(); setActive(n.to); }} className={'nav-link' + (active === n.to ? ' active' : '')}>{NAV_ICONS[n.icon]}{n.label}</a>
                 ))}
-                <ThemeSwitch />
+                <div className="prefs"><ThemeSwitch /><LangSwitch /></div>
                 <div className="sidebar-foot">
                     <div className="avatar">{initialsOf('Demo Owner')}</div>
                     <div className="sidebar-who"><strong>Demo Owner</strong><button className="signout">Sign out</button></div>

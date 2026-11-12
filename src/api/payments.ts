@@ -2,6 +2,7 @@
 // calculation lives in payroll runs). Same endpoints as the phone's Payments
 // screen. A delete is soft: the payment can be restored from "Show deleted".
 import { api, apiGet } from './client';
+import { tx } from '../i18n';
 
 export type Payment = {
     id: number; payment_number: number; user_id: number; user_name: string; pay_period_id: number | null; invoice_id: number | null;
@@ -22,11 +23,11 @@ export const paymentsApi = {
 export const methodLabel = (m: string | null) => {
     switch ((m ?? '').toLowerCase().replace(/[\s-]+/g, '_')) {
         case '': return '—';
-        case 'e_transfer': return 'E-transfer';
-        case 'direct_deposit': return 'Direct deposit';
-        case 'cheque': case 'check': return 'Cheque';
-        case 'cash': return 'Cash';
-        case 'pay_card': return 'Pay card';
+        case 'e_transfer': return tx('E-transfer');
+        case 'direct_deposit': return tx('Direct deposit');
+        case 'cheque': case 'check': return tx('Cheque');
+        case 'cash': return tx('Cash');
+        case 'pay_card': return tx('Pay card');
         default: return (m ?? '').replace(/_/g, ' ');
     }
 };

@@ -3,6 +3,7 @@
 // as the phones (shared KMP models), so the server sees one client.
 // ============================================================
 import { api, apiGet } from './client';
+import { tx, lang } from '../i18n';
 
 export type ActiveShift = { clockin_id: number; job_id: number; job_name: string | null; clock_in_time: string; note?: string | null };
 
@@ -87,12 +88,12 @@ export type OwedRow = { user_id: number; full_name: string; status: string; net:
 export type Adjustment = { id: number; user_id: number; amount: number; adjusted_on: string; kind: 'opening' | 'adjustment'; note: string | null; created_at: string };
 
 // ── display helpers shared by the Team pages ──
-export const money = (v: unknown) => `$${n(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-export const dateOnly = (iso: string | null | undefined) => iso ? new Date(iso.slice(0, 10) + 'T12:00:00').toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : '';
-export const dateTime = (iso: string | null | undefined) => iso ? new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '';
-export const timeOnly = (iso: string | null | undefined) => iso ? new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '';
+export const money = (v: unknown) => `$${n(v).toLocaleString(lang(), { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+export const dateOnly = (iso: string | null | undefined) => iso ? new Date(iso.slice(0, 10) + 'T12:00:00').toLocaleDateString(lang(), { year: 'numeric', month: 'short', day: 'numeric' }) : '';
+export const dateTime = (iso: string | null | undefined) => iso ? new Date(iso).toLocaleString(lang(), { dateStyle: 'medium', timeStyle: 'short' }) : '';
+export const timeOnly = (iso: string | null | undefined) => iso ? new Date(iso).toLocaleTimeString(lang(), { hour: 'numeric', minute: '2-digit' }) : '';
 export const employmentLabel = (t: string | null | undefined) =>
-    ({ full_time: 'Full-time', part_time: 'Part-time', casual: 'Casual', contractor: 'Contractor', salary: 'Salaried' } as Record<string, string>)[t ?? ''] ?? (t ?? 'Not set');
-export const statusLabel = (s: string) => ({ active: 'Active', inactive: 'Inactive', terminated: 'Terminated', pending: 'Pending', deleted: 'Deleted' } as Record<string, string>)[s] ?? s;
+    ({ full_time: tx('Full-time'), part_time: tx('Part-time'), casual: tx('Casual'), contractor: tx('Contractor'), salary: tx('Salaried') } as Record<string, string>)[t ?? ''] ?? (t ?? tx('Not set'));
+export const statusLabel = (s: string) => ({ active: tx('Active'), inactive: tx('Inactive'), terminated: tx('Terminated'), pending: tx('Pending'), deleted: tx('Deleted') } as Record<string, string>)[s] ?? s;
 export const PROVINCES = ['Alberta', 'British Columbia', 'Manitoba', 'New Brunswick', 'Newfoundland and Labrador', 'Nova Scotia',
     'Northwest Territories', 'Nunavut', 'Ontario', 'Prince Edward Island', 'Saskatchewan', 'Yukon'];

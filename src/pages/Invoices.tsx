@@ -14,6 +14,7 @@ import InvoiceEditor from './InvoiceEditor';
 import RowMenu from '../components/Menu';
 import { InvoiceStatsDialog } from '../components/StatsDialog';
 import { useToast } from '../components/Toast';
+import { tx } from '../i18n';
 
 export default function Invoices() {
     const { session, org } = useAuth();
@@ -34,7 +35,7 @@ export default function Invoices() {
     const load = useCallback(() => {
         if (!session || !org) return;
         orgApi.invoices(session.userId, org.organization_id, undefined, showDeleted).then(r => { setInvoices(r.invoices); setError(null); })
-            .catch(e => setError(e instanceof ApiError ? e.message : 'Could not load invoices'));
+            .catch(e => setError(e instanceof ApiError ? e.message : tx("Could not load invoices")));
     }, [session, org, showDeleted]);
     useEffect(() => { setInvoices(null); load(); }, [load]);
 
@@ -49,10 +50,10 @@ export default function Invoices() {
             else if (kind === 'restore') { await invoicesApi.recover(session.userId, org.organization_id, inv.id); toast(`${inv.invoice_number} restored`); load(); }
             else if (kind === 'unpaid') { await orgApi.setInvoiceStatus(session.userId, org.organization_id, inv.id, 'sent'); load(); }
             // Handed over on paper or sent from your own mail: sent, with no email from here.
-            else if (kind === 'marksent') { await orgApi.setInvoiceStatus(session.userId, org.organization_id, inv.id, 'sent'); toast(`${inv.invoice_number} marked as sent`); load(); }
+            else if (kind === 'marksent') { await orgApi.setInvoiceStatus(session.userId, org.organization_id, inv.id, 'sent'); toast(tx("{0} marked as sent", inv.invoice_number)); load(); }
             else if (kind === 'cancel') { await orgApi.setInvoiceStatus(session.userId, org.organization_id, inv.id, 'cancelled'); setConfirmAct(null); toast(`${inv.invoice_number} cancelled`); load(); }
             else { await invoicesApi.remove(session.userId, org.organization_id, inv.id); setConfirmAct(null); toast(`${inv.invoice_number} deleted`); load(); }
-        } catch (e) { setError(e instanceof ApiError ? e.message : 'Could not do that'); }
+        } catch (e) { setError(e instanceof ApiError ? e.message : tx("Could not do that")); }
         finally { setBusy(null); }
     }
 
@@ -64,42 +65,42 @@ export default function Invoices() {
     return (
         <>
             <div className="toolbar">
-                <label className="field inline"><span>Show</span>
+                <label className="field inline"><span>{tx("Show")}</span>
                     <select value={filter} onChange={e => setFilter(e.target.value as typeof filter)}>
-                        <option value="all">All</option><option value="draft">Drafts</option><option value="sent">Sent</option><option value="paid">Paid</option>
+                        <option value="all">{tx("All")}</option><option value="draft">{tx("Drafts")}</option><option value="sent">{tx("Sent")}</option><option value="paid">{tx("Paid")}</option>
                     </select></label>
-                <label className="check"><input type="checkbox" checked={showDeleted} onChange={e => setShowDeleted(e.target.checked)} /> Show deleted</label>
-                <div className="muted small">Outstanding {money(outstanding)}</div>
+                <label className="check"><input type="checkbox" checked={showDeleted} onChange={e => setShowDeleted(e.target.checked)} /> {tx("Show deleted")}</label>
+                <div className="muted small">{tx("Outstanding")} {money(outstanding)}</div>
                 <span className="spacer" />
-                <button className="btn" onClick={() => setStats(true)}>Statistics</button>
-                <button className="btn btn-primary" onClick={() => setEditor({})}>New invoice</button>
+                <button className="btn" onClick={() => setStats(true)}>{tx("Statistics")}</button>
+                <button className="btn btn-primary" onClick={() => setEditor({})}>{tx("New invoice")}</button>
             </div>
             {error && <p className="error-line">{error}</p>}
             <div className="card card-flush">
-                {list.length === 0 ? <div className="empty">No invoices here.</div> : (
+                {list.length === 0 ? <div className="empty">{tx("No invoices here.")}</div> : (
                     <table className="table table-hover">
-                        <thead><tr><th>Number</th><th>Client</th><th>Job</th><th>Issued</th><th>Due</th><th>Total</th><th>Status</th><th></th></tr></thead>
+                        <thead><tr><th>{tx("Number")}</th><th>{tx("Client")}</th><th>{tx("Job")}</th><th>{tx("Issued")}</th><th>{tx("Due")}</th><th>{tx("Total")}</th><th>{tx("Status")}</th><th></th></tr></thead>
                         <tbody>
                             {list.map(i => (
                                 <tr key={i.id} className={i.is_deleted ? 'muted' : ''}>
-                                    <td>{(i.status === 'draft' || i.status === 'sent') && !i.is_deleted ? <button className="row-link linkish" title="Edit" onClick={() => setEditor({ invoiceId: i.id })}><strong>{i.invoice_number}</strong></button> : <strong>{i.invoice_number}</strong>}{i.is_opening && <span className="pill" title="A balance carried forward from before the app">Carried forward</span>}</td>
+                                    <td>{(i.status === 'draft' || i.status === 'sent') && !i.is_deleted ? <button className="row-link linkish" title={tx("Edit")} onClick={() => setEditor({ invoiceId: i.id })}><strong>{i.invoice_number}</strong></button> : <strong>{i.invoice_number}</strong>}{i.is_opening && <span className="pill" title={tx("A balance carried forward from before the app")}>{tx("Carried forward")}</span>}</td>
                                     <td>{i.client_name ?? '—'}</td>
                                     <td>{i.job_name ?? <span className="faint">—</span>}</td>
-                                    <td>{i.status === 'draft' ? <span className="faint">on send</span> : dateOnly(i.issue_date)}</td>
-                                    <td className={i.is_overdue ? 'danger' : ''}>{i.status === 'draft' ? <span className="faint">on send</span> : dateOnly(i.due_date)}</td>
+                                    <td>{i.status === 'draft' ? <span className="faint">{tx("on send")}</span> : dateOnly(i.issue_date)}</td>
+                                    <td className={i.is_overdue ? 'danger' : ''}>{i.status === 'draft' ? <span className="faint">{tx("on send")}</span> : dateOnly(i.due_date)}</td>
                                     <td>{money(i.total)}</td>
-                                    <td>{i.is_deleted ? <span className="pill danger">Deleted</span> : <span className={'pill' + (i.status === 'paid' ? ' live' : i.is_overdue ? ' danger' : i.status === 'draft' ? ' caution' : '')}>{i.is_overdue && i.status === 'sent' ? 'Overdue' : i.status.charAt(0).toUpperCase() + i.status.slice(1)}</span>}</td>
-                                    {i.is_deleted ? <td className="actions"><button className="btn btn-sm" disabled={busy === `restore-${i.id}`} onClick={() => act(i, 'restore')}>Restore</button></td> : <td className="actions">
-                                        <button className="btn btn-sm" disabled={busy === `pdf-${i.id}`} onClick={() => act(i, 'pdf')}>PDF</button>
-                                        {(i.status === 'draft' || i.status === 'sent') && <button className="btn btn-sm" onClick={() => setConfirmSend(i)}>{i.status === 'draft' ? 'Send' : 'Resend'}</button>}
-                                        {i.status === 'sent' && <button className="btn btn-sm" onClick={() => setPaying(i)}>Mark paid</button>}
-                                        {i.status === 'paid' && <button className="btn btn-sm" disabled={busy === `unpaid-${i.id}`} onClick={() => act(i, 'unpaid')}>Mark unpaid</button>}
+                                    <td>{i.is_deleted ? <span className="pill danger">{tx("Deleted")}</span> : <span className={'pill' + (i.status === 'paid' ? ' live' : i.is_overdue ? ' danger' : i.status === 'draft' ? ' caution' : '')}>{i.is_overdue && i.status === 'sent' ? tx("Overdue") : tx(i.status.charAt(0).toUpperCase() + i.status.slice(1))}</span>}</td>
+                                    {i.is_deleted ? <td className="actions"><button className="btn btn-sm" disabled={busy === `restore-${i.id}`} onClick={() => act(i, 'restore')}>{tx("Restore")}</button></td> : <td className="actions">
+                                        <button className="btn btn-sm" disabled={busy === `pdf-${i.id}`} onClick={() => act(i, 'pdf')}>{tx("PDF")}</button>
+                                        {(i.status === 'draft' || i.status === 'sent') && <button className="btn btn-sm" onClick={() => setConfirmSend(i)}>{i.status === 'draft' ? tx("Send") : tx("Resend")}</button>}
+                                        {i.status === 'sent' && <button className="btn btn-sm" onClick={() => setPaying(i)}>{tx("Mark paid")}</button>}
+                                        {i.status === 'paid' && <button className="btn btn-sm" disabled={busy === `unpaid-${i.id}`} onClick={() => act(i, 'unpaid')}>{tx("Mark unpaid")}</button>}
                                         <RowMenu items={[
-                                            (i.status === 'draft' || i.status === 'sent') && { label: 'Edit', onClick: () => setEditor({ invoiceId: i.id }) },
-                                            { label: 'Duplicate', onClick: () => setEditor({ copyOf: i.id }) },
-                                            i.status === 'draft' && { label: 'Mark as sent (no email)', onClick: () => act(i, 'marksent') },
-                                            i.status !== 'cancelled' && i.status !== 'paid' && { label: 'Cancel invoice', danger: true, onClick: () => setConfirmAct({ inv: i, kind: 'cancel' }) },
-                                            { label: i.status === 'draft' ? 'Delete draft' : 'Delete', danger: true, onClick: () => setConfirmAct({ inv: i, kind: 'delete' }) },
+                                            (i.status === 'draft' || i.status === 'sent') && { label: tx("Edit"), onClick: () => setEditor({ invoiceId: i.id }) },
+                                            { label: tx("Duplicate"), onClick: () => setEditor({ copyOf: i.id }) },
+                                            i.status === 'draft' && { label: tx("Mark as sent (no email)"), onClick: () => act(i, 'marksent') },
+                                            i.status !== 'cancelled' && i.status !== 'paid' && { label: tx("Cancel invoice"), danger: true, onClick: () => setConfirmAct({ inv: i, kind: 'cancel' }) },
+                                            { label: i.status === 'draft' ? tx("Delete draft") : tx("Delete"), danger: true, onClick: () => setConfirmAct({ inv: i, kind: 'delete' }) },
                                         ]} />
                                     </td>}
                                 </tr>
@@ -109,20 +110,18 @@ export default function Invoices() {
                 )}
             </div>
             {confirmAct && (
-                <Dialog title={confirmAct.kind === 'cancel' ? `Cancel ${confirmAct.inv.invoice_number}?` : `Delete ${confirmAct.inv.invoice_number}?`} onClose={() => setConfirmAct(null)}
-                    footer={<SaveFooter onCancel={() => setConfirmAct(null)} saving={busy === `${confirmAct.kind}-${confirmAct.inv.id}`} label={confirmAct.kind === 'cancel' ? 'Cancel invoice' : 'Delete'} onSave={() => act(confirmAct.inv, confirmAct.kind)} />}>
-                    <p className="muted">{confirmAct.kind === 'cancel'
-                        ? `A cancelled invoice is void: it can't be edited or sent, and its PDF prints with a CANCELLED line. The number ${confirmAct.inv.invoice_number} is never reused.`
-                        : confirmAct.inv.status === 'draft' ? 'The draft is removed for good.' : 'The invoice leaves your lists and totals. It can be restored from the app (Invoices → deleted).'}</p>
+                <Dialog title={confirmAct.kind === 'cancel' ? tx("Cancel {0}?", confirmAct.inv.invoice_number) : tx("Delete {0}?", confirmAct.inv.invoice_number)} onClose={() => setConfirmAct(null)}
+                    footer={<SaveFooter onCancel={() => setConfirmAct(null)} saving={busy === `${confirmAct.kind}-${confirmAct.inv.id}`} label={confirmAct.kind === 'cancel' ? tx("Cancel invoice") : tx("Delete")} onSave={() => act(confirmAct.inv, confirmAct.kind)} />}>
+                    <p className="muted">{confirmAct.kind === 'cancel' ? tx("A cancelled invoice is void: it can't be edited or sent, and its PDF prints with a CANCELLED line. The number {0} is never reused.", confirmAct.inv.invoice_number) : confirmAct.inv.status === 'draft' ? tx("The draft is removed for good.") : tx("The invoice leaves your lists and totals. It can be restored from the app (Invoices → deleted).")}</p>
                 </Dialog>
             )}
             {stats && <InvoiceStatsDialog onClose={() => setStats(false)} />}
-            {paying && <MarkPaidDialog invoice={paying} onClose={() => setPaying(null)} onDone={() => { setPaying(null); toast(`${paying.invoice_number} marked paid`); load(); }} />}
+            {paying && <MarkPaidDialog invoice={paying} onClose={() => setPaying(null)} onDone={() => { setPaying(null); toast(tx("{0} marked paid", paying.invoice_number)); load(); }} />}
             {editor && <InvoiceEditor invoiceId={editor.invoiceId} copyOf={editor.copyOf} clientId={editor.clientId} onClose={() => setEditor(null)} onDone={() => { setEditor(null); load(); }} />}
             {confirmSend && (
-                <Dialog title={`Send ${confirmSend.invoice_number}?`} subtitle={`${money(confirmSend.total)} to ${confirmSend.client_name ?? 'the client'}. ${confirmSend.status === 'draft' ? 'The issue and due dates become today and the client’s terms.' : 'The client receives the PDF again.'}`} onClose={() => setConfirmSend(null)}
-                    footer={<SaveFooter onCancel={() => setConfirmSend(null)} label="Send" saving={busy === `send-${confirmSend.id}`} onSave={() => act(confirmSend, 'send')} />}>
-                    <p className="muted">The email goes from invoices@clockinout.ca with your email as the reply address.</p>
+                <Dialog title={tx("Send {0}?", confirmSend.invoice_number)} subtitle={tx('{0} to {1}.', money(confirmSend.total), confirmSend.client_name ?? tx('the client')) + ' ' + (confirmSend.status === 'draft' ? tx('The issue and due dates become today and the client’s terms.') : tx('The client receives the PDF again.'))} onClose={() => setConfirmSend(null)}
+                    footer={<SaveFooter onCancel={() => setConfirmSend(null)} label={tx("Send")} saving={busy === `send-${confirmSend.id}`} onSave={() => act(confirmSend, 'send')} />}>
+                    <p className="muted">{tx("The email goes from invoices@clockinout.ca with your email as the reply address.")}</p>
                 </Dialog>
             )}
         </>
@@ -140,16 +139,16 @@ function MarkPaidDialog({ invoice, onClose, onDone }: { invoice: InvoiceRow; onC
         if (!session || !org || !date) return;
         setSaving(true); setError(null);
         try { await orgApi.setInvoiceStatus(session.userId, org.organization_id, invoice.id, 'paid', method, date); onDone(); }
-        catch (e) { setError(e instanceof ApiError ? e.message : 'Could not save'); setSaving(false); }
+        catch (e) { setError(e instanceof ApiError ? e.message : tx("Could not save")); setSaving(false); }
     }
     return (
-        <Dialog title={`Mark ${invoice.invoice_number} as paid`} subtitle={`${money(invoice.total)} from ${invoice.client_name ?? 'the client'}.`} onClose={onClose}
-            footer={<SaveFooter onCancel={onClose} onSave={save} saving={saving} label="Mark paid" disabled={!date} />}>
-            <label className="field"><span>Paid by</span>
+        <Dialog title={tx("Mark {0} as paid", invoice.invoice_number)} subtitle={tx('{0} from {1}.', money(invoice.total), invoice.client_name ?? tx('the client'))} onClose={onClose}
+            footer={<SaveFooter onCancel={onClose} onSave={save} saving={saving} label={tx("Mark paid")} disabled={!date} />}>
+            <label className="field"><span>{tx("Paid by")}</span>
                 <select value={method} onChange={e => setMethod(e.target.value)}>
-                    <option value="e_transfer">E-transfer</option><option value="cheque">Cheque</option><option value="cash">Cash</option><option value="card">Card</option><option value="other">Other</option>
+                    <option value="e_transfer">{tx("E-transfer")}</option><option value="cheque">{tx("Cheque")}</option><option value="cash">{tx("Cash")}</option><option value="card">{tx("Card")}</option><option value="other">{tx("Other")}</option>
                 </select></label>
-            <label className="field"><span>Date paid</span><input type="date" value={date} onChange={e => setDate(e.target.value)} /></label>
+            <label className="field"><span>{tx("Date paid")}</span><input type="date" value={date} onChange={e => setDate(e.target.value)} /></label>
             {error && <p className="error-line">{error}</p>}
         </Dialog>
     );

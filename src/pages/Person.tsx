@@ -14,6 +14,7 @@ import BalanceDialog from '../components/BalanceDialog';
 import MemberActionDialog, { type MemberAction } from '../components/MemberActionDialog';
 import { useToast } from '../components/Toast';
 import { initialsOf } from '../layout/Shell';
+import { tx, hoursText, perHour } from '../i18n';
 
 type Editor =
     | { kind: 'text'; field: string; label: string; value: string; type?: string }
@@ -24,8 +25,8 @@ function Row({ label, value, placeholder, onClick, locked, tone }: { label: stri
     return (
         <div className={'rrow' + (onClick && !locked ? ' clickable' : '')} onClick={locked ? undefined : onClick}>
             <div className="rlabel">{label}</div>
-            <div className={'rvalue' + (empty ? ' faint' : '') + (tone ? ` ${tone}` : '')}>{empty ? (placeholder ?? 'Not set') : value}</div>
-            {locked ? <span className="rlock" title="Edited by the person in the app">🔒</span> : onClick ? <span className="rchev">›</span> : null}
+            <div className={'rvalue' + (empty ? ' faint' : '') + (tone ? ` ${tone}` : '')}>{empty ? (placeholder ?? tx("Not set")) : value}</div>
+            {locked ? <span className="rlock" title={tx("Edited by the person in the app")}>🔒</span> : onClick ? <span className="rchev">›</span> : null}
         </div>
     );
 }
@@ -52,114 +53,114 @@ export default function Person() {
     const save = useCallback(async (field: string, value: string) => {
         if (!session || !org || !user) return;
         try { await team.updateField(session.userId, org.organization_id, user.id, field, value); setEditor(null); await reload(); }
-        catch (e) { toast(e instanceof ApiError ? e.message : 'Could not save', 'error'); }
+        catch (e) { toast(e instanceof ApiError ? e.message : tx("Could not save"), 'error'); }
     }, [session, org, user, reload]);
 
 
     if (error) return <div className="card danger">{error}</div>;
     if (!data) return <SkeletonRecord groups={3} rows={4} />;
-    if (!user) return <div className="card">This person is not on the team. <Link to="/team">Back to Team</Link></div>;
+    if (!user) return <div className="card">{tx("This person is not on the team.")} <Link to="/team">{tx("Back to Team")}</Link></div>;
 
     const text = (field: string, label: string, value: string | null | undefined, type?: string): Editor => ({ kind: 'text', field, label, value: value ?? '', type });
     const address = [user.street, user.unit_number, user.city, user.state, user.postal_code, user.country].filter(Boolean).join(', ');
     const taxSummary = (() => {
         const parts: string[] = [];
-        const basic = 'Basic claim';
+        const basic = tx('Basic claim');
         parts.push(user.td1_federal == null && user.td1_provincial == null ? basic
             : `TD1 ${user.td1_federal != null ? money(user.td1_federal) : basic.toLowerCase()} / ${user.td1_provincial != null ? money(user.td1_provincial) : basic.toLowerCase()}`);
-        if (user.cpp_exempt) parts.push('CPP exempt');
-        if (user.ei_exempt) parts.push('EI exempt');
-        if (num(user.pretax_deductions) > 0) parts.push(`Pre-tax ${money(user.pretax_deductions)}/pay`);
-        if (user.tax_dependants > 0) parts.push(`Dependants: ${user.tax_dependants}`);
-        if (num(user.opening_gross) > 0) parts.push(`${user.opening_year} opening balances`);
+        if (user.cpp_exempt) parts.push(tx('CPP exempt'));
+        if (user.ei_exempt) parts.push(tx('EI exempt'));
+        if (num(user.pretax_deductions) > 0) parts.push(tx('Pre-tax {0}/pay', money(user.pretax_deductions)));
+        if (user.tax_dependants > 0) parts.push(tx('Dependants: {0}', user.tax_dependants));
+        if (num(user.opening_gross) > 0) parts.push(tx('{0} opening balances', user.opening_year));
         return parts.join('  ·  ');
     })();
 
     return (
         <>
-            <p><Link to="/team">‹ Team</Link></p>
+            <p><Link to="/team">{tx("‹ Team")}</Link></p>
             <div className="person-head">
                 <div className="person-id">
                     <div className={'avatar avatar-lg' + (user.is_clocked_in ? ' live' : '')} aria-hidden="true">{initialsOf(user.full_name || user.email)}</div>
                     <div>
-                    <h2>{user.full_name}{self && <span className="pill">You</span>}{user.role === 'employer' ? <span className="pill">Owner</span> : user.is_admin ? <span className="pill">Admin</span> : null}{!user.joined && <span className="pill caution">Not joined</span>}</h2>
-                    <div className="muted">{employmentLabel(user.employment_type)} · {statusLabel(user.status)}{user.is_clocked_in ? ` · On the clock${user.current_job_name ? ` at ${user.current_job_name}` : ''}` : ''}</div>
+                    <h2>{user.full_name}{self && <span className="pill">{tx("You")}</span>}{user.role === 'employer' ? <span className="pill">{tx("Owner")}</span> : user.is_admin ? <span className="pill">{tx("Admin")}</span> : null}{!user.joined && <span className="pill caution">{tx("Not joined")}</span>}</h2>
+                    <div className="muted">{employmentLabel(user.employment_type)} · {statusLabel(user.status)}{user.is_clocked_in ? tx(" · On the clock{0}", user.current_job_name ? tx(' at {0}', user.current_job_name) : '') : ''}</div>
                     </div>
                 </div>
                 <div className="head-actions">
                     {user.status === 'active' && (user.is_clocked_in
-                        ? <button className="btn" onClick={() => setEditor({ kind: 'end' })}>End shift</button>
-                        : <button className="btn" onClick={() => setEditor({ kind: 'clockin' })}>Clock in</button>)}
+                        ? <button className="btn" onClick={() => setEditor({ kind: 'end' })}>{tx("End shift")}</button>
+                        : <button className="btn" onClick={() => setEditor({ kind: 'clockin' })}>{tx("Clock in")}</button>)}
                     {!user.joined && session && org && (
                         <button className="btn" onClick={async () => {
-                            try { const r = await team.sendInvite(session.email, user.email, org.organization_id); toast(r.message ?? 'Invite sent'); }
-                            catch (e) { toast(e instanceof ApiError ? e.message : 'Could not send the invite', 'error'); }
-                        }}>Send invite</button>
+                            try { const r = await team.sendInvite(session.email, user.email, org.organization_id); toast(r.message ?? tx("Invite sent")); }
+                            catch (e) { toast(e instanceof ApiError ? e.message : tx("Could not send the invite"), 'error'); }
+                        }}>{tx("Send invite")}</button>
                     )}
                 </div>
             </div>
             {/* The three figures an employer looks for first; Balance opens its sheet. */}
             <div className="cards person-stats">
                 <div className="card">
-                    <div className="stat-label">This week</div>
-                    <div className="stat stat-sm">{user.week_hours.toFixed(1)} h</div>
+                    <div className="stat-label">{tx("This week")}</div>
+                    <div className="stat stat-sm">{hoursText(user.week_hours)}</div>
                     {data.overtime?.enabled && data.overtime.threshold > 0 && (() => {
                         const cap = data.overtime.threshold, over = user.week_hours >= cap, near = !over && user.week_hours >= cap * 0.9;
-                        return <div className={'week' + (over ? ' over' : near ? ' near' : '')}><div className="bar"><div style={{ width: `${Math.min(100, (user.week_hours / cap) * 100)}%` }} /></div><span>{over ? 'In overtime' : near ? 'Close to overtime' : `of ${cap} h`}</span></div>;
+                        return <div className={'week' + (over ? ' over' : near ? ' near' : '')}><div className="bar"><div style={{ width: `${Math.min(100, (user.week_hours / cap) * 100)}%` }} /></div><span>{over ? tx("In overtime") : near ? tx("Close to overtime") : tx("of {0} h", cap)}</span></div>;
                     })()}
                 </div>
                 <div className="card">
-                    <div className="stat-label">Rate</div>
-                    <div className="stat stat-sm">{user.current_rate != null ? `${money(user.current_rate)}/h` : '—'}</div>
-                    <div className="faint small">{employmentLabel(user.employment_type)}{num(user.salary_amount) > 0 ? ` · ${money(user.salary_amount)} a year` : ''}</div>
+                    <div className="stat-label">{tx("Rate")}</div>
+                    <div className="stat stat-sm">{user.current_rate != null ? perHour(money(user.current_rate)) : '—'}</div>
+                    <div className="faint small">{employmentLabel(user.employment_type)}{num(user.salary_amount) > 0 ? tx(" · {0} a year", money(user.salary_amount)) : ''}</div>
                 </div>
                 {user.role !== 'employer' && (
                     <button type="button" className="card stat-link" onClick={() => setEditor({ kind: 'balance' })}>
-                        <div className="stat-label">Balance</div>
+                        <div className="stat-label">{tx("Balance")}</div>
                         <div className={'stat stat-sm' + (owedRow && owedRow.owed > 0.005 ? ' danger' : owedRow && owedRow.owed < -0.005 ? ' caution' : '')}>{owedRow ? money(Math.abs(owedRow.owed)) : '—'}</div>
-                        <div className="faint small">{!owedRow ? ' ' : Math.abs(owedRow.owed) < 0.005 ? 'Settled' : owedRow.owed > 0 ? 'You owe them' : 'They owe you'}</div>
+                        <div className="faint small">{!owedRow ? ' ' : Math.abs(owedRow.owed) < 0.005 ? tx("Settled") : owedRow.owed > 0 ? tx("You owe them") : tx("They owe you")}</div>
                     </button>
                 )}
             </div>
 
             <div className="groups">
                 <section className="card card-flush">
-                    <div className="eyebrow">Identity</div>
-                    {sealed && <p className="muted small pad">{self ? 'Your name, email and phone are edited in the app under Settings → Edit Profile.' : 'This person has activated their account and manages their own name, email, phone and address in the app.'}</p>}
-                    <Row label="Full name" value={user.full_name} locked={sealed} onClick={() => setEditor(text('full_name', 'Full name', user.full_name))} />
-                    <Row label="Email" value={user.email} locked={sealed} onClick={() => setEditor(text('email', 'Email', user.email, 'email'))} />
-                    <Row label="Phone" value={user.phone_number} locked={sealed} onClick={() => setEditor(text('phone_number', 'Phone', user.phone_number))} />
-                    <Row label="Address" value={address} locked={sealed} onClick={() => setEditor(text('street', 'Street', user.street))} />
-                    <Row label="Date of birth" value={dateOnly(user.dob)} locked={sealed} onClick={() => setEditor(text('dob', 'Date of birth', user.dob?.slice(0, 10), 'date'))} />
-                    <Row label={contractor ? 'Business number' : 'SIN'} value={contractor ? user.tax_registration_number : user.taxpayer_id ? '•••••' + user.taxpayer_id.slice(-3) : null}
+                    <div className="eyebrow">{tx("Identity")}</div>
+                    {sealed && <p className="muted small pad">{self ? tx("Your name, email and phone are edited in the app under Settings → Edit Profile.") : tx("This person has activated their account and manages their own name, email, phone and address in the app.")}</p>}
+                    <Row label={tx("Full name")} value={user.full_name} locked={sealed} onClick={() => setEditor(text('full_name', tx('Full name'), user.full_name))} />
+                    <Row label={tx("Email")} value={user.email} locked={sealed} onClick={() => setEditor(text('email', tx('Email'), user.email, 'email'))} />
+                    <Row label={tx("Phone")} value={user.phone_number} locked={sealed} onClick={() => setEditor(text('phone_number', tx('Phone'), user.phone_number))} />
+                    <Row label={tx("Address")} value={address} locked={sealed} onClick={() => setEditor(text('street', tx('Street'), user.street))} />
+                    <Row label={tx("Date of birth")} value={dateOnly(user.dob)} locked={sealed} onClick={() => setEditor(text('dob', tx('Date of birth'), user.dob?.slice(0, 10), 'date'))} />
+                    <Row label={contractor ? tx("Business number") : tx("SIN")} value={contractor ? user.tax_registration_number : user.taxpayer_id ? '•••••' + user.taxpayer_id.slice(-3) : null}
                         locked={!contractor && sealed}
-                        onClick={() => setEditor(contractor ? text('tax_registration_number', 'GST/HST registration number', user.tax_registration_number) : text('taxpayer_id', 'SIN (9 digits)', ''))} />
+                        onClick={() => setEditor(contractor ? text('tax_registration_number', tx('GST/HST registration number'), user.tax_registration_number) : text('taxpayer_id', tx('SIN (9 digits)'), ''))} />
                 </section>
 
                 <section className="card card-flush">
-                    <div className="eyebrow">Employment</div>
-                    <Row label="Start date" value={dateOnly(user.start_date ?? user.joined_at)} onClick={() => setEditor(text('start_date', 'Start date', (user.start_date ?? '').slice(0, 10), 'date'))} />
-                    <Row label="Employment type" value={employmentLabel(user.employment_type)} onClick={() => setEditor({ kind: 'type' })} />
-                    <Row label="Status" value={statusLabel(user.status)} tone={user.status === 'terminated' ? 'danger' : user.status === 'inactive' ? 'caution' : undefined}
+                    <div className="eyebrow">{tx("Employment")}</div>
+                    <Row label={tx("Start date")} value={dateOnly(user.start_date ?? user.joined_at)} onClick={() => setEditor(text('start_date', tx('Start date'), (user.start_date ?? '').slice(0, 10), 'date'))} />
+                    <Row label={tx("Employment type")} value={employmentLabel(user.employment_type)} onClick={() => setEditor({ kind: 'type' })} />
+                    <Row label={tx("Status")} value={statusLabel(user.status)} tone={user.status === 'terminated' ? 'danger' : user.status === 'inactive' ? 'caution' : undefined}
                         locked={self} onClick={() => setEditor({ kind: 'status' })} />
-                    <Row label="Pay rate" value={user.current_rate != null ? `${money(user.current_rate)}/h${num(user.salary_amount) > 0 ? `  ·  ${money(user.salary_amount)}/yr` : ''}` : null}
-                        placeholder="Tap to set" onClick={() => setEditor({ kind: 'rate' })} />
-                    {!contractor && <Row label="Tax profile" value={taxSummary} onClick={() => setEditor({ kind: 'tax' })} />}
-                    {!contractor && <Row label="Tax jurisdiction" value={user.tax_jurisdiction_override?.replace(/^CA-/, '')} placeholder="Organization’s province" onClick={() => setEditor({ kind: 'jurisdiction' })} />}
-                    {user.role !== 'employer' && <Row label="Balance" value={owedRow ? (Math.abs(owedRow.owed) < 0.005 ? 'Settled' : owedRow.owed > 0 ? `You owe them ${money(owedRow.owed)}` : `They owe you ${money(-owedRow.owed)}`) : undefined}
-                        placeholder="Loading…" tone={owedRow && owedRow.owed > 0.005 ? 'danger' : undefined} onClick={() => setEditor({ kind: 'balance' })} />}
-                    <Row label="Notes" value={user.notes} placeholder="Optional — tap to add" onClick={() => setEditor(text('notes', 'Notes', user.notes))} />
-                    <Row label="Geofencing" value={user.geofence_enabled ? `Enabled (${user.geofence_radius ?? 100} m)` : 'Disabled'} />
+                    <Row label={tx("Pay rate")} value={user.current_rate != null ? `${money(user.current_rate)}/h${num(user.salary_amount) > 0 ? `  ·  ${money(user.salary_amount)}/yr` : ''}` : null}
+                        placeholder={tx("Tap to set")} onClick={() => setEditor({ kind: 'rate' })} />
+                    {!contractor && <Row label={tx("Tax profile")} value={taxSummary} onClick={() => setEditor({ kind: 'tax' })} />}
+                    {!contractor && <Row label={tx("Tax jurisdiction")} value={user.tax_jurisdiction_override?.replace(/^CA-/, '')} placeholder={tx("Organization’s province")} onClick={() => setEditor({ kind: 'jurisdiction' })} />}
+                    {user.role !== 'employer' && <Row label={tx("Balance")} value={owedRow ? (Math.abs(owedRow.owed) < 0.005 ? tx("Settled") : owedRow.owed > 0 ? tx("You owe them {0}", money(owedRow.owed)) : tx("They owe you {0}", money(-owedRow.owed))) : undefined}
+                        placeholder={tx("Loading…")} tone={owedRow && owedRow.owed > 0.005 ? 'danger' : undefined} onClick={() => setEditor({ kind: 'balance' })} />}
+                    <Row label={tx("Notes")} value={user.notes} placeholder={tx("Optional — tap to add")} onClick={() => setEditor(text('notes', tx('Notes'), user.notes))} />
+                    <Row label={tx("Geofencing")} value={user.geofence_enabled ? tx("Enabled ({0} m)", user.geofence_radius ?? 100) : tx("Disabled")} />
                 </section>
 
                 <section className="card card-flush">
-                    <div className="eyebrow">Account</div>
-                    <Row label="Admin access" value={user.is_admin ? 'Yes' : 'No'} locked={self || user.role === 'employer'}
+                    <div className="eyebrow">{tx("Account")}</div>
+                    <Row label={tx("Admin access")} value={user.is_admin ? tx("Yes") : tx("No")} locked={self || user.role === 'employer'}
                         onClick={() => save('is_admin', user.is_admin ? 'false' : 'true')} />
-                    <Row label="Registered" value={dateTime(user.created_at)} />
-                    <Row label="Joined organization" value={user.joined ? dateTime(user.joined_at) : 'Not joined yet'} tone={user.joined ? undefined : 'caution'} />
-                    {!user.joined && user.verification_code && <Row label="Invite code" value={user.verification_code} />}
-                    <Row label="Last active" value={dateTime(user.org_last_login)} placeholder="Never" />
+                    <Row label={tx("Registered")} value={dateTime(user.created_at)} />
+                    <Row label={tx("Joined organization")} value={user.joined ? dateTime(user.joined_at) : tx("Not joined yet")} tone={user.joined ? undefined : 'caution'} />
+                    {!user.joined && user.verification_code && <Row label={tx("Invite code")} value={user.verification_code} />}
+                    <Row label={tx("Last active")} value={dateTime(user.org_last_login)} placeholder={tx("Never")} />
                 </section>
             </div>
 
@@ -167,9 +168,9 @@ export default function Person() {
             {!self && user.role !== 'employer' && (
                 <div className="danger-zone">
                     {user.status === 'terminated' || user.status === 'inactive'
-                        ? <button className="btn" onClick={() => setEditor({ kind: 'member', action: 'reactivate' })}>Reactivate</button>
-                        : <button className="btn" onClick={() => setEditor({ kind: 'member', action: 'terminate' })}>Terminate</button>}
-                    <button className="btn btn-danger" onClick={() => setEditor({ kind: 'member', action: 'delete' })}>Delete employee</button>
+                        ? <button className="btn" onClick={() => setEditor({ kind: 'member', action: 'reactivate' })}>{tx("Reactivate")}</button>
+                        : <button className="btn" onClick={() => setEditor({ kind: 'member', action: 'terminate' })}>{tx("Terminate")}</button>}
+                    <button className="btn btn-danger" onClick={() => setEditor({ kind: 'member', action: 'delete' })}>{tx("Delete employee")}</button>
                 </div>
             )}
 
@@ -177,14 +178,14 @@ export default function Person() {
                 onDone={msg => { const gone = editor.action === 'delete'; setEditor(null); toast(msg); if (gone) navigate('/team'); else reload(); }} />}
             {editor?.kind === 'text' && <TextDialog ed={editor} onClose={() => setEditor(null)} onSave={save} />}
             {editor?.kind === 'status' && (
-                <ChoiceDialog title="Status" options={[['active', 'Active'], ['inactive', 'Inactive'], ['terminated', 'Terminated']]} current={user.status} onClose={() => setEditor(null)} onPick={v => save('status', v)} />
+                <ChoiceDialog title={tx("Status")} options={[['active', tx("Active")], ['inactive', tx("Inactive")], ['terminated', tx("Terminated")]]} current={user.status} onClose={() => setEditor(null)} onPick={v => save('status', v)} />
             )}
             {editor?.kind === 'type' && (
-                <ChoiceDialog title="Employment type" options={[['full_time', 'Full-time'], ['part_time', 'Part-time'], ['casual', 'Casual'], ['contractor', 'Contractor'], ['salary', 'Salaried']]} current={user.employment_type ?? ''} onClose={() => setEditor(null)} onPick={v => save('employment_type', v)} />
+                <ChoiceDialog title={tx("Employment type")} options={[['full_time', tx("Full-time")], ['part_time', tx("Part-time")], ['casual', tx("Casual")], ['contractor', tx("Contractor")], ['salary', tx("Salaried")]]} current={user.employment_type ?? ''} onClose={() => setEditor(null)} onPick={v => save('employment_type', v)} />
             )}
             {editor?.kind === 'jurisdiction' && (
-                <ChoiceDialog title="Tax jurisdiction" subtitle="Taxes follow the province where this person reports to work — the organization’s, unless they work from an establishment in another one. Changes apply to pay periods calculated from now on."
-                    options={[['', 'Organization’s province'], ...PROVINCES.map(p => [`CA-${p}`, p] as [string, string])]}
+                <ChoiceDialog title={tx("Tax jurisdiction")} subtitle={tx("Taxes follow the province where this person reports to work — the organization’s, unless they work from an establishment in another one. Changes apply to pay periods calculated from now on.")}
+                    options={[['', tx("Organization’s province")], ...PROVINCES.map(p => [`CA-${p}`, p] as [string, string])]}
                     current={user.tax_jurisdiction_override ?? ''} onClose={() => setEditor(null)} onPick={v => save('tax_jurisdiction_override', v)} />
             )}
             {editor?.kind === 'rate' && <RateDialog user={user} onClose={() => setEditor(null)} onSave={async (rate, salary) => { await save('current_rate', rate); if (salary !== undefined) await save('salary_amount', salary); }} />}
@@ -192,12 +193,12 @@ export default function Person() {
             {editor?.kind === 'tax' && <TaxProfileDialog user={user} onClose={() => setEditor(null)} onDone={() => { setEditor(null); reload(); }} onError={m => toast(m, 'error')} />}
             {editor?.kind === 'clockin' && <ClockInDialog user={user} onClose={() => setEditor(null)} onDone={() => { setEditor(null); reload(); }} />}
             {editor?.kind === 'end' && session && org && (
-                <Dialog title={`End ${user.full_name}'s shift?`} onClose={() => setEditor(null)}
-                    footer={<SaveFooter onCancel={() => setEditor(null)} label="End shift" onSave={async () => {
+                <Dialog title={tx("End {0}'s shift?", user.full_name)} onClose={() => setEditor(null)}
+                    footer={<SaveFooter onCancel={() => setEditor(null)} label={tx("End shift")} onSave={async () => {
                         try { await team.endShift(session.userId, user.current_clock_in_id!, new Date().toISOString(), org.organization_id); setEditor(null); reload(); }
-                        catch (e) { toast(e instanceof ApiError ? e.message : 'Could not end the shift', 'error'); }
+                        catch (e) { toast(e instanceof ApiError ? e.message : tx("Could not end the shift"), 'error'); }
                     }} />}>
-                    <p className="muted">The shift ends now; times can be adjusted on their hours afterwards.</p>
+                    <p className="muted">{tx("The shift ends now; times can be adjusted on their hours afterwards.")}</p>
                 </Dialog>
             )}
         </>
@@ -237,20 +238,20 @@ function RateDialog({ user, onClose, onSave }: { user: RosterUser; onClose: () =
     const derived = salary ? Math.round((Number(salary) / 2080) * 100) / 100 : null;
     const [saving, setSaving] = useState(false);
     return (
-        <Dialog title="Pay rate" subtitle="Hours, overtime and taxes run on the hourly rate; a salary is the number people discussed, shown on paystubs." onClose={onClose}
+        <Dialog title={tx("Pay rate")} subtitle={tx("Hours, overtime and taxes run on the hourly rate; a salary is the number people discussed, shown on paystubs.")} onClose={onClose}
             footer={<SaveFooter onCancel={onClose} saving={saving} disabled={salaryMode ? derived == null : !rate} onSave={async () => {
                 setSaving(true);
                 if (salaryMode) await onSave(String(derived), salary); else await onSave(rate, '');
                 setSaving(false);
             }} />}>
-            <label className="check"><input type="checkbox" checked={salaryMode} onChange={e => setSalaryMode(e.target.checked)} /> Paid an annual salary</label>
+            <label className="check"><input type="checkbox" checked={salaryMode} onChange={e => setSalaryMode(e.target.checked)} /> {tx("Paid an annual salary")}</label>
             {salaryMode ? (
-                <label className="field"><span>Annual salary ($/year)</span>
+                <label className="field"><span>{tx("Annual salary ($/year)")}</span>
                     <input inputMode="decimal" value={salary} onChange={e => setSalary(e.target.value.replace(/[^0-9.]/g, ''))} />
-                    <small className="muted">{derived != null ? `= ${money(derived)}/h (salary ÷ 2,080 h)` : 'The hourly rate is salary ÷ 2,080 h.'}</small>
+                    <small className="muted">{derived != null ? `= ${money(derived)}/h (salary ÷ 2,080 h)` : tx("The hourly rate is salary ÷ 2,080 h.")}</small>
                 </label>
             ) : (
-                <label className="field"><span>Hourly rate ($/h)</span>
+                <label className="field"><span>{tx("Hourly rate ($/h)")}</span>
                     <input inputMode="decimal" value={rate} onChange={e => setRate(e.target.value.replace(/[^0-9.]/g, ''))} autoFocus />
                 </label>
             )}
@@ -286,30 +287,30 @@ function TaxProfileDialog({ user, onClose, onDone, onError }: { user: RosterUser
                 await team.setOpeningBalances(user.id, org.organization_id, year, { gross: v[0], cpp: v[1], cpp2: v[2], ei: v[3], federalTax: v[4], provincialTax: v[5] });
             }
             onDone();
-        } catch (e) { onError(e instanceof ApiError ? e.message : 'Could not save the tax profile'); setSaving(false); }
+        } catch (e) { onError(e instanceof ApiError ? e.message : tx('Could not save the tax profile')); setSaving(false); }
     }
-    const openingLabels = ['Gross pay so far ($)', 'CPP deducted ($)', 'CPP2 deducted ($)', 'EI deducted ($)', 'Federal tax deducted ($)', 'Provincial tax deducted ($)'];
+    const openingLabels = [tx('Gross pay so far ($)'), tx('CPP deducted ($)'), tx('CPP2 deducted ($)'), tx('EI deducted ($)'), tx('Federal tax deducted ($)'), tx('Provincial tax deducted ($)')];
 
     return (
-        <Dialog title="Tax profile" wide onClose={onClose}
-            subtitle="From the TD1 forms on file. Leave a claim amount blank to use the basic personal amount. Changes apply to pay periods calculated from now on; calculated periods keep their figures until you edit them."
+        <Dialog title={tx("Tax profile")} wide onClose={onClose}
+            subtitle={tx("From the TD1 forms on file. Leave a claim amount blank to use the basic personal amount. Changes apply to pay periods calculated from now on; calculated periods keep their figures until you edit them.")}
             footer={<SaveFooter onCancel={onClose} onSave={save} saving={saving} />}>
             <div className="grid-2">
-                <label className="field"><span>Federal TD1 total claim ($)</span><input inputMode="decimal" value={fed} onChange={e => setFed(dec(e.target.value))} placeholder="Basic personal amount" />
-                    <small className="muted">The “Total claim amount” line at the bottom of the federal TD1. Blank = the basic personal amount — most people claim only that.</small></label>
-                <label className="field"><span>Provincial TD1 total claim ($)</span><input inputMode="decimal" value={prov} onChange={e => setProv(dec(e.target.value))} placeholder="Basic personal amount" />
-                    <small className="muted">Same line on the provincial TD1 (TD1ON for Ontario).</small></label>
+                <label className="field"><span>{tx("Federal TD1 total claim ($)")}</span><input inputMode="decimal" value={fed} onChange={e => setFed(dec(e.target.value))} placeholder={tx("Basic personal amount")} />
+                    <small className="muted">{tx("The “Total claim amount” line at the bottom of the federal TD1. Blank = the basic personal amount — most people claim only that.")}</small></label>
+                <label className="field"><span>{tx("Provincial TD1 total claim ($)")}</span><input inputMode="decimal" value={prov} onChange={e => setProv(dec(e.target.value))} placeholder={tx("Basic personal amount")} />
+                    <small className="muted">{tx("Same line on the provincial TD1 (TD1ON for Ontario).")}</small></label>
             </div>
-            <label className="check"><input type="checkbox" checked={cpp} onChange={e => setCpp(e.target.checked)} /> CPP exempt <span className="muted">— under 18, over 70, or a CPT30 election on file</span></label>
-            <label className="check"><input type="checkbox" checked={ei} onChange={e => setEi(e.target.checked)} /> EI exempt <span className="muted">— not at arm’s length with the employer, e.g. close family</span></label>
+            <label className="check"><input type="checkbox" checked={cpp} onChange={e => setCpp(e.target.checked)} /> {tx("CPP exempt")} <span className="muted">{tx("— under 18, over 70, or a CPT30 election on file")}</span></label>
+            <label className="check"><input type="checkbox" checked={ei} onChange={e => setEi(e.target.checked)} /> {tx("EI exempt")} <span className="muted">{tx("— not at arm’s length with the employer, e.g. close family")}</span></label>
             <div className="grid-2">
-                <label className="field"><span>Pre-tax deductions per pay ($)</span><input inputMode="decimal" value={pretax} onChange={e => setPretax(dec(e.target.value))} placeholder="0" />
-                    <small className="muted">RRSP contributions or union dues deducted at source.</small></label>
-                <label className="field"><span>Dependants</span><input inputMode="numeric" value={deps} onChange={e => setDeps(e.target.value.replace(/\D/g, '').slice(0, 2))} placeholder="0" />
-                    <small className="muted">Children under 18 and infirm dependants. Ontario tax reduction only.</small></label>
+                <label className="field"><span>{tx("Pre-tax deductions per pay ($)")}</span><input inputMode="decimal" value={pretax} onChange={e => setPretax(dec(e.target.value))} placeholder="0" />
+                    <small className="muted">{tx("RRSP contributions or union dues deducted at source.")}</small></label>
+                <label className="field"><span>{tx("Dependants")}</span><input inputMode="numeric" value={deps} onChange={e => setDeps(e.target.value.replace(/\D/g, '').slice(0, 2))} placeholder="0" />
+                    <small className="muted">{tx("Children under 18 and infirm dependants. Ontario tax reduction only.")}</small></label>
             </div>
-            <h3 style={{ marginTop: 8 }}>Earlier in {year}, before ClockInOut</h3>
-            <p className="muted small">What this organization already paid and deducted for this person this year, from your old payroll. Needed so CPP and EI stop at their yearly maximums and paystubs show true year-to-date figures. Only this organization’s own figures — the maximums are per employer, so another employer’s deductions never go here.</p>
+            <h3 style={{ marginTop: 8 }}>{tx("Earlier in")} {year}{tx(", before ClockInOut")}</h3>
+            <p className="muted small">{tx("What this organization already paid and deducted for this person this year, from your old payroll. Needed so CPP and EI stop at their yearly maximums and paystubs show true year-to-date figures. Only this organization’s own figures — the maximums are per employer, so another employer’s deductions never go here.")}</p>
             <div className="grid-2">
                 {openingLabels.map((l, i) => (
                     <label key={l} className="field"><span>{l}</span><input inputMode="decimal" value={opening[i]} placeholder="0" onChange={e => setOpening(o => o.map((x, j) => j === i ? dec(e.target.value) : x))} /></label>

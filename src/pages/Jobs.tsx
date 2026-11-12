@@ -12,6 +12,7 @@ import AddressSearch from '../components/AddressSearch';
 import MapView from '../components/MapView';
 import { JobStatsDialog } from '../components/StatsDialog';
 import { useToast } from '../components/Toast';
+import { tx } from '../i18n';
 
 export default function Jobs() {
     const { session, org } = useAuth();
@@ -27,8 +28,8 @@ export default function Jobs() {
     async function remove(j: Job) {
         if (!session) return;
         setBusy(true);
-        try { await jobsApi.remove(session.userId, j.id); setDeleting(null); toast(`${j.name} was deleted`); load(); }
-        catch (e) { toast(e instanceof ApiError ? e.message : 'Could not delete the job', 'error'); }
+        try { await jobsApi.remove(session.userId, j.id); setDeleting(null); toast(tx("{0} was deleted", j.name)); load(); }
+        catch (e) { toast(e instanceof ApiError ? e.message : tx("Could not delete the job"), 'error'); }
         finally { setBusy(false); }
     }
 
@@ -36,14 +37,14 @@ export default function Jobs() {
         if (!session || !org) return;
         jobsApi.list(session.userId, org.organization_id)
             .then(r => { setJobs(r.jobs); setError(null); })
-            .catch(e => setError(e instanceof ApiError ? e.message : 'Could not load jobs'));
+            .catch(e => setError(e instanceof ApiError ? e.message : tx("Could not load jobs")));
     }, [session, org]);
     useEffect(() => { setJobs(null); load(); }, [load]);
 
     async function archive(j: Job) {
         if (!session || !org) return;
         try { await jobsApi.setArchived(session.userId, org.organization_id, j.id, !j.archived); load(); }
-        catch (e) { setError(e instanceof ApiError ? e.message : 'Could not update the job'); }
+        catch (e) { setError(e instanceof ApiError ? e.message : tx("Could not update the job")); }
     }
 
     if (error) return <div className="card danger">{error}</div>;
@@ -53,42 +54,42 @@ export default function Jobs() {
     return (
         <>
             <div className="toolbar">
-                <label className="check"><input type="checkbox" checked={showArchived} onChange={e => setShowArchived(e.target.checked)} /> Show archived</label>
+                <label className="check"><input type="checkbox" checked={showArchived} onChange={e => setShowArchived(e.target.checked)} /> {tx("Show archived")}</label>
                 <span className="spacer" />
-                <button className="btn btn-primary" onClick={() => setEditing('new')}>New job</button>
+                <button className="btn btn-primary" onClick={() => setEditing('new')}>{tx("New job")}</button>
             </div>
             <div className="card card-flush">
                 <table className="table table-hover">
-                    <thead><tr><th>Job</th><th>Address</th><th>Geofence</th><th>On site now</th><th></th></tr></thead>
+                    <thead><tr><th>{tx("Job")}</th><th>{tx("Address")}</th><th>{tx("Geofence")}</th><th>{tx("On site now")}</th><th></th></tr></thead>
                     <tbody>
                         {list.map(j => (
                             <tr key={j.id} className={j.archived ? 'muted' : ''}>
                                 <td><button className="row-link linkish" onClick={() => setEditing(j)}><strong>{j.name}</strong></button>
-                                    {j.archived && <span className="pill">Archived</span>}
+                                    {j.archived && <span className="pill">{tx("Archived")}</span>}
                                     {j.description && <div className="faint small">{j.description}</div>}</td>
-                                <td>{j.address ?? <span className="faint">—</span>}{j.latitude == null && <div className="faint small">No pin yet — open the job and search its address</div>}</td>
-                                <td>{j.geofence_enabled ? `On · ${j.geofence_radius ?? 100} m` : <span className="faint">Off</span>}</td>
+                                <td>{j.address ?? <span className="faint">—</span>}{j.latitude == null && <div className="faint small">{tx("No pin yet — open the job and search its address")}</div>}</td>
+                                <td>{j.geofence_enabled ? tx("On · {0} m", j.geofence_radius ?? 100) : <span className="faint">{tx("Off")}</span>}</td>
                                 <td>{Array.isArray(j.active_workers) ? j.active_workers.length : (j.active_workers ?? 0)}</td>
                                 <td className="actions">
-                                    <button className="btn btn-sm" onClick={() => archive(j)}>{j.archived ? 'Unarchive' : 'Archive'}</button>
+                                    <button className="btn btn-sm" onClick={() => archive(j)}>{j.archived ? tx("Unarchive") : tx("Archive")}</button>
                                     <RowMenu items={[
-                                        { label: 'View or edit details', onClick: () => setEditing(j) },
-                                        { label: 'Statistics', onClick: () => setStatsFor(j.id) },
-                                        { label: 'Delete job', danger: true, onClick: () => setDeleting(j) },
+                                        { label: tx("View or edit details"), onClick: () => setEditing(j) },
+                                        { label: tx("Statistics"), onClick: () => setStatsFor(j.id) },
+                                        { label: tx("Delete job"), danger: true, onClick: () => setDeleting(j) },
                                     ]} />
                                 </td>
                             </tr>
                         ))}
-                        {list.length === 0 && <tr><td colSpan={5} className="empty">No jobs yet.</td></tr>}
+                        {list.length === 0 && <tr><td colSpan={5} className="empty">{tx("No jobs yet.")}</td></tr>}
                     </tbody>
                 </table>
             </div>
             {statsFor != null && <JobStatsDialog jobId={statsFor} onClose={() => setStatsFor(null)} />}
             {deleting && (
-                <Dialog title={`Delete ${deleting.name}?`} onClose={() => setDeleting(null)}
-                    footer={<SaveFooter onCancel={() => setDeleting(null)} saving={busy} label="Delete" onSave={() => remove(deleting)} />}>
-                    <p className="muted">This deletes the job and all of its clock-in history: every recorded shift on this job is removed, and hours from those shifts disappear from unpaid payroll. This cannot be undone here.</p>
-                    <p className="muted">To retire the job but keep its history, use Archive instead.</p>
+                <Dialog title={tx("Delete {0}?", deleting.name)} onClose={() => setDeleting(null)}
+                    footer={<SaveFooter onCancel={() => setDeleting(null)} saving={busy} label={tx("Delete")} onSave={() => remove(deleting)} />}>
+                    <p className="muted">{tx("This deletes the job and all of its clock-in history: every recorded shift on this job is removed, and hours from those shifts disappear from unpaid payroll. This cannot be undone here.")}</p>
+                    <p className="muted">{tx("To retire the job but keep its history, use Archive instead.")}</p>
                 </Dialog>
             )}
             {editing && <JobDialog job={editing === 'new' ? null : editing} onClose={() => setEditing(null)} onDone={() => { setEditing(null); load(); }} />}
@@ -127,27 +128,27 @@ function JobDialog({ job, onClose, onDone }: { job: Job | null; onClose: () => v
                 }
             }
             onDone();
-        } catch (e) { setError(e instanceof ApiError ? e.message : 'Could not save'); setSaving(false); }
+        } catch (e) { setError(e instanceof ApiError ? e.message : tx("Could not save")); setSaving(false); }
     }
 
     return (
-        <Dialog title={job ? job.name : 'New job'} wide onClose={onClose} footer={<SaveFooter onCancel={onClose} onSave={save} saving={saving} disabled={!name.trim()} />}>
-            <label className="field"><span>Name</span><input value={name} onChange={e => setName(e.target.value)} autoFocus /></label>
-            <div className="field"><span>Address</span>
+        <Dialog title={job ? job.name : tx("New job")} wide onClose={onClose} footer={<SaveFooter onCancel={onClose} onSave={save} saving={saving} disabled={!name.trim()} />}>
+            <label className="field"><span>{tx("Name")}</span><input value={name} onChange={e => setName(e.target.value)} autoFocus /></label>
+            <div className="field"><span>{tx("Address")}</span>
                 {/* Pick a real address: it fills the text AND places the pin the geofence and the route map need. */}
-                <AddressSearch placeholder="Search for the site's address" onPick={a => { setAddress([a.street, a.city, a.province, a.postalCode].filter(Boolean).join(', ')); setPin({ lat: a.lat, lon: a.lon }); }} />
-                <input value={address} onChange={e => setAddress(e.target.value)} placeholder="Street, city, province" />
-                <small className="muted">{hasPin ? 'Click the map to move the pin to the exact spot.' : 'Search above to place the pin, or click the map. Without a pin the job cannot be geofenced.'}</small>
+                <AddressSearch placeholder={tx("Search for the site's address")} onPick={a => { setAddress([a.street, a.city, a.province, a.postalCode].filter(Boolean).join(', ')); setPin({ lat: a.lat, lon: a.lon }); }} />
+                <input value={address} onChange={e => setAddress(e.target.value)} placeholder={tx("Street, city, province")} />
+                <small className="muted">{hasPin ? tx("Click the map to move the pin to the exact spot.") : tx("Search above to place the pin, or click the map. Without a pin the job cannot be geofenced.")}</small>
             </div>
-            <MapView height={220} points={pin ? [{ lat: pin.lat, lon: pin.lon, kind: 'job', label: name || 'Job site' }] : []}
+            <MapView height={220} points={pin ? [{ lat: pin.lat, lon: pin.lon, kind: 'job', label: name || tx("Job site") }] : []}
                 circle={pin && fenceOn ? { lat: pin.lat, lon: pin.lon, radius: parseInt(radius) || 100 } : undefined}
                 onPick={(lat, lon) => setPin({ lat, lon })} />
             <div style={{ height: 12 }} />
-            <label className="field"><span>Description</span><textarea rows={3} value={description} onChange={e => setDescription(e.target.value)} /></label>
+            <label className="field"><span>{tx("Description")}</span><textarea rows={3} value={description} onChange={e => setDescription(e.target.value)} /></label>
             {hasPin && (
                 <>
-                    <label className="check"><input type="checkbox" checked={fenceOn} onChange={e => setFenceOn(e.target.checked)} /> Geofence this job</label>
-                    {fenceOn && <label className="field"><span>Radius (metres)</span><input inputMode="numeric" value={radius} onChange={e => setRadius(e.target.value.replace(/\D/g, ''))} /></label>}
+                    <label className="check"><input type="checkbox" checked={fenceOn} onChange={e => setFenceOn(e.target.checked)} /> {tx("Geofence this job")}</label>
+                    {fenceOn && <label className="field"><span>{tx("Radius (metres)")}</span><input inputMode="numeric" value={radius} onChange={e => setRadius(e.target.value.replace(/\D/g, ''))} /></label>}
                 </>
             )}
             {error && <p className="error-line">{error}</p>}

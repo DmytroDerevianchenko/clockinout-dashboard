@@ -6,6 +6,7 @@ import { payroll, type PayPeriod, type UserBalance, money, periodLabel, n } from
 import { useAuth } from '../auth';
 import Dialog, { SaveFooter } from '../components/Dialog';
 import { payrollGross, payrollGrossDrift, payrollNetAmount, payrollToggleDrift, payrollTotalDeductions, round2 } from '../payrollMath';
+import { tx } from '../i18n';
 
 const f2 = (v: number) => v.toFixed(2);
 const dec = (s: string) => s.replace(/[^0-9.]/g, '');
@@ -79,7 +80,7 @@ export function EditPayrollDialog({ period, b, name, onClose, onDone }: { period
                 setCpp(f2(n(s.cpp_amount) + n(s.cpp2_amount))); setEi(f2(n(s.ei_amount)));
                 setFed(f2(n(s.federal_tax))); setProv(f2(n(s.state_tax)));
                 setSs(f2(n(s.social_security_amount))); setMed(f2(n(s.medicare_amount)));
-            } catch (e) { if (!cancelled) setError(e instanceof ApiError ? e.message : 'Could not calculate'); }
+            } catch (e) { if (!cancelled) setError(e instanceof ApiError ? e.message : tx("Could not calculate")); }
             finally { if (!cancelled) setCalculating(false); }
         }, 400);
         return () => { cancelled = true; clearTimeout(t); };
@@ -112,54 +113,54 @@ export function EditPayrollDialog({ period, b, name, onClose, onDone }: { period
                 notes: note.trim() || null, manualOverride: protect,
             });
             onDone();
-        } catch (e) { setError(e instanceof ApiError ? e.message : 'Could not save'); setSaving(false); }
+        } catch (e) { setError(e instanceof ApiError ? e.message : tx("Could not save")); setSaving(false); }
     }
 
     return (
-        <Dialog title={`Edit payroll · ${name}`} subtitle={periodLabel(period) + (b.jurisdiction ? ` · ${b.jurisdiction}` : '')} onClose={onClose} wide
+        <Dialog title={tx("Edit payroll · {0}", name)} subtitle={periodLabel(period) + (b.jurisdiction ? ` · ${b.jurisdiction}` : '')} onClose={onClose} wide
             footer={<SaveFooter onCancel={onClose} onSave={save} saving={saving} disabled={calculating} />}>
             <div className="grid-2">
-                <Money label="Gross ($)" value={gross} onChange={setGross} />
-                <div className="field"><span>Earned from hours</span><div className="rvalue">{money(base)}{expectedGross !== base ? <span className="faint"> → expected {money(expectedGross)}</span> : null}</div>
-                    {payrollGrossDrift(g, expectedGross) && <button className="btn btn-sm" type="button" onClick={() => setGross(f2(expectedGross))}>Use expected gross</button>}</div>
+                <Money label={tx("Gross ($)")} value={gross} onChange={setGross} />
+                <div className="field"><span>{tx("Earned from hours")}</span><div className="rvalue">{money(base)}{expectedGross !== base ? <span className="faint"> {tx("→ expected")} {money(expectedGross)}</span> : null}</div>
+                    {payrollGrossDrift(g, expectedGross) && <button className="btn btn-sm" type="button" onClick={() => setGross(f2(expectedGross))}>{tx("Use expected gross")}</button>}</div>
             </div>
             {!isContractor && (
                 <>
-                    <div className="eyebrow nopad">Earnings</div>
-                    <Toggle label="Overtime" sub={suggOt > 0.009 ? `premium ${money(suggOt)}` : 'no overtime this period'} on={otOn} set={setOtOn} enabled={suggOt > 0.009 || otOn} />
+                    <div className="eyebrow nopad">{tx("Earnings")}</div>
+                    <Toggle label={tx("Overtime")} sub={suggOt > 0.009 ? `premium ${money(suggOt)}` : tx("no overtime this period")} on={otOn} set={setOtOn} enabled={suggOt > 0.009 || otOn} />
                     {b.holidays?.length > 0 && <>
-                        <Toggle label="Holiday pay" sub={`${b.holidays.map(h => h.name).join(', ')} · ${money(suggHol)}`} on={holOn} set={setHolOn} enabled={suggHol > 0.009 || holOn} />
-                        <Toggle label="Holiday premium (1.5×)" sub={suggPrem > 0.009 ? `${money(suggPrem)} extra for hours worked on the holiday` : 'no hours worked on the holiday'} on={holOn && premOn} set={setPremOn} enabled={holOn && (suggPrem > 0.009 || premOn)} />
+                        <Toggle label={tx("Holiday pay")} sub={`${b.holidays.map(h => h.name).join(', ')} · ${money(suggHol)}`} on={holOn} set={setHolOn} enabled={suggHol > 0.009 || holOn} />
+                        <Toggle label={tx("Holiday premium (1.5×)")} sub={suggPrem > 0.009 ? tx("{0} extra for hours worked on the holiday", money(suggPrem)) : tx("no hours worked on the holiday")} on={holOn && premOn} set={setPremOn} enabled={holOn && (suggPrem > 0.009 || premOn)} />
                     </>}
-                    {!isUs && <Toggle label={`Vacation pay (${(vacRate * 100).toFixed(0)}%)`} sub={vacOn ? `adding ${money(bd.vacationPay)}` : 'not added this period'} on={vacOn} set={setVacOn} />}
-                    <div className="eyebrow nopad">{isCasual ? 'Deductions' : 'Withholding'}</div>
+                    {!isUs && <Toggle label={tx("Vacation pay ({0}%)", (vacRate * 100).toFixed(0))} sub={vacOn ? `adding ${money(bd.vacationPay)}` : tx("not added this period")} on={vacOn} set={setVacOn} />}
+                    <div className="eyebrow nopad">{isCasual ? tx("Deductions") : tx("Withholding")}</div>
                     {!isCasual && (b.deductionsAvailable ? (
                         <>
-                            <label className="check"><input type="checkbox" checked={autoCalc} onChange={e => setAutoCalc(e.target.checked)} /> Auto-calculate <span className="muted small">— the CRA formula on this gross{calculating ? ' · calculating…' : ''}</span></label>
+                            <label className="check"><input type="checkbox" checked={autoCalc} onChange={e => setAutoCalc(e.target.checked)} /> {tx("Auto-calculate")} <span className="muted small">{tx("— the CRA formula on this gross")}{calculating ? ' · ' + tx('calculating…') : ''}</span></label>
                             <div className="grid-2">
-                                {isUs ? <><Money label="Social Security" value={ss} onChange={setSs} disabled={autoCalc} /><Money label="Medicare" value={med} onChange={setMed} disabled={autoCalc} /></>
-                                      : <><Money label="CPP (incl. CPP2)" value={cpp} onChange={setCpp} disabled={autoCalc} /><Money label="EI" value={ei} onChange={setEi} disabled={autoCalc} /></>}
-                                <Money label="Federal tax" value={fed} onChange={setFed} disabled={autoCalc} />
-                                <Money label={isUs ? 'State tax' : 'Provincial tax'} value={prov} onChange={setProv} disabled={autoCalc} />
+                                {isUs ? <><Money label={tx("Social Security")} value={ss} onChange={setSs} disabled={autoCalc} /><Money label={tx("Medicare")} value={med} onChange={setMed} disabled={autoCalc} /></>
+                                      : <><Money label={tx("CPP (incl. CPP2)")} value={cpp} onChange={setCpp} disabled={autoCalc} /><Money label={tx("EI")} value={ei} onChange={setEi} disabled={autoCalc} /></>}
+                                <Money label={tx("Federal tax")} value={fed} onChange={setFed} disabled={autoCalc} />
+                                <Money label={isUs ? tx("State tax") : tx("Provincial tax")} value={prov} onChange={setProv} disabled={autoCalc} />
                             </div>
                         </>
-                    ) : <p className="caution small">Statutory deductions aren't available for {b.jurisdiction?.split(' - ')[1] ?? 'this jurisdiction'} yet. This pay is shown gross.</p>)}
-                    <Money label="Other deductions ($)" value={other} onChange={setOther} />
-                    {b.customDeductions?.length > 0 && <p className="faint small">Organization deductions on this run: {b.customDeductions.map(c => `${c.name} ${money(c.amount)}`).join(', ')} — included in Other.</p>}
+                    ) : <p className="caution small">{tx("Statutory deductions aren't available for")} {b.jurisdiction?.split(' - ')[1] ?? tx("this jurisdiction")} {tx("yet. This pay is shown gross.")}</p>)}
+                    <Money label={tx("Other deductions ($)")} value={other} onChange={setOther} />
+                    {b.customDeductions?.length > 0 && <p className="faint small">{tx("Organization deductions on this run:")} {b.customDeductions.map(c => `${c.name} ${money(c.amount)}`).join(', ')} {tx("— included in Other.")}</p>}
                 </>
             )}
             {isContractor && (
                 <>
-                    <div className="eyebrow nopad">Tax added on top</div>
-                    <Money label={n(b.gstHstRate) > 0 ? `GST/HST (${(n(b.gstHstRate) * 100).toFixed(0)}%)` : 'GST/HST'} value={gst} onChange={setGst} />
+                    <div className="eyebrow nopad">{tx("Tax added on top")}</div>
+                    <Money label={n(b.gstHstRate) > 0 ? tx("GST/HST ({0}%)", (n(b.gstHstRate) * 100).toFixed(0)) : tx("GST/HST")} value={gst} onChange={setGst} />
                 </>
             )}
             <div className="card" style={{ background: 'var(--accent-soft)', borderColor: 'transparent', marginTop: 8 }}>
-                <div className="stat-label">{isContractor ? 'Total payable' : 'Net pay'}</div>
+                <div className="stat-label">{isContractor ? tx("Total payable") : tx("Net pay")}</div>
                 <div className="stat">{money(net)}</div>
-                <div className="muted small">{isContractor ? 'Gross plus the tax above.' : 'Gross minus every deduction above. This is the figure that gets saved.'}</div>
+                <div className="muted small">{isContractor ? tx("Gross plus the tax above.") : tx("Gross minus every deduction above. This is the figure that gets saved.")}</div>
             </div>
-            <label className="field"><span>Note (optional)</span><input value={note} onChange={e => setNote(e.target.value)} placeholder="Why this run was adjusted" /></label>
+            <label className="field"><span>{tx("Note (optional)")}</span><input value={note} onChange={e => setNote(e.target.value)} placeholder={tx("Why this run was adjusted")} /></label>
             {error && <p className="error-line">{error}</p>}
         </Dialog>
     );
@@ -185,19 +186,19 @@ export function RecordPaymentDialog({ period, b, name, onClose, onDone }: { peri
                 paymentDate: `${date}T12:00:00`, notes: note.trim() || null, payPeriodId: period.id, payrollRunId: b.payrollRunId ?? null,
             });
             onDone();
-        } catch (e) { setError(e instanceof ApiError ? e.message : 'Could not record the payment'); setSaving(false); }
+        } catch (e) { setError(e instanceof ApiError ? e.message : tx("Could not record the payment")); setSaving(false); }
     }
     return (
-        <Dialog title={`Record a payment · ${name}`} subtitle={`${periodLabel(period)} · net ${money(b.netAmount)}, paid so far ${money(b.totalPaid)}`} onClose={onClose}
-            footer={<SaveFooter onCancel={onClose} onSave={save} saving={saving} label="Record" disabled={!(Number(amount) > 0)} />}>
-            <label className="field"><span>Amount ($)</span><input inputMode="decimal" value={amount} onChange={e => setAmount(dec(e.target.value))} autoFocus /></label>
-            <label className="field"><span>Method</span>
+        <Dialog title={tx("Record a payment · {0}", name)} subtitle={tx("{0} · net {1}, paid so far {2}", periodLabel(period), money(b.netAmount), money(b.totalPaid))} onClose={onClose}
+            footer={<SaveFooter onCancel={onClose} onSave={save} saving={saving} label={tx("Record")} disabled={!(Number(amount) > 0)} />}>
+            <label className="field"><span>{tx("Amount ($)")}</span><input inputMode="decimal" value={amount} onChange={e => setAmount(dec(e.target.value))} autoFocus /></label>
+            <label className="field"><span>{tx("Method")}</span>
                 <select value={method} onChange={e => setMethod(e.target.value)}>
-                    <option value="e-transfer">E-transfer</option><option value="cash">Cash</option><option value="cheque">Cheque</option><option value="direct_deposit">Direct deposit</option>
+                    <option value="e-transfer">{tx("E-transfer")}</option><option value="cash">{tx("Cash")}</option><option value="cheque">{tx("Cheque")}</option><option value="direct_deposit">{tx("Direct deposit")}</option>
                 </select>
             </label>
-            <label className="field"><span>Date</span><input type="date" value={date} onChange={e => setDate(e.target.value)} /></label>
-            <label className="field"><span>Note (optional)</span><input value={note} onChange={e => setNote(e.target.value)} /></label>
+            <label className="field"><span>{tx("Date")}</span><input type="date" value={date} onChange={e => setDate(e.target.value)} /></label>
+            <label className="field"><span>{tx("Note (optional)")}</span><input value={note} onChange={e => setNote(e.target.value)} /></label>
             {error && <p className="error-line">{error}</p>}
         </Dialog>
     );

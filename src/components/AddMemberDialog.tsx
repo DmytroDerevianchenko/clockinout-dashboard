@@ -7,8 +7,9 @@ import { ApiError } from '../api/client';
 import { team } from '../api/team';
 import { useAuth } from '../auth';
 import Dialog, { SaveFooter } from './Dialog';
+import { tx } from '../i18n';
 
-const TYPES = [['full_time', 'Full-time'], ['part_time', 'Part-time'], ['casual', 'Casual'], ['contractor', 'Contractor'], ['salary', 'Salaried']];
+const TYPES = [['full_time', tx("Full-time")], ['part_time', tx("Part-time")], ['casual', tx("Casual")], ['contractor', tx("Contractor")], ['salary', tx("Salaried")]];
 
 export default function AddMemberDialog({ onClose, onDone }: { onClose: () => void; onDone: () => void }) {
     const { session, org } = useAuth();
@@ -27,7 +28,7 @@ export default function AddMemberDialog({ onClose, onDone }: { onClose: () => vo
         setSaving(true); setError(null);
         try {
             const check = await team.checkEmail(session.userId, org.organization_id, f.email.trim());
-            if (check.isMember) { setError('This person is already on the team.'); setSaving(false); return; }
+            if (check.isMember) { setError(tx("This person is already on the team.")); setSaving(false); return; }
             await team.createUser({
                 userId: session.userId, organizationId: org.organization_id, email: f.email.trim(), fullName: f.fullName.trim(),
                 role: f.role, startDate: f.startDate, phoneNumber: f.phoneNumber || null, employmentType: f.employmentType,
@@ -49,41 +50,41 @@ export default function AddMemberDialog({ onClose, onDone }: { onClose: () => vo
             }
             if (invite) {
                 const r = await team.sendInvite(session.email, f.email.trim(), org.organization_id);
-                setNote(r.message ?? 'Invite sent.');
+                setNote(r.message ?? tx('Invite sent.'));
             }
             onDone();
-        } catch (e) { setError(e instanceof ApiError ? e.message : 'Could not add the member'); setSaving(false); }
+        } catch (e) { setError(e instanceof ApiError ? e.message : tx("Could not add the member")); setSaving(false); }
     }
 
     return (
-        <Dialog title="Add a team member" subtitle="They appear on the roster right away; the invite lets them sign in to the app." onClose={onClose} wide
-            footer={<SaveFooter onCancel={onClose} onSave={save} saving={saving} label="Add" disabled={!f.email || !f.fullName} />}>
+        <Dialog title={tx("Add a team member")} subtitle={tx("They appear on the roster right away; the invite lets them sign in to the app.")} onClose={onClose} wide
+            footer={<SaveFooter onCancel={onClose} onSave={save} saving={saving} label={tx("Add")} disabled={!f.email || !f.fullName} />}>
             <div className="grid-2">
-                <label className="field"><span>Full name</span><input value={f.fullName} onChange={set('fullName')} /></label>
-                <label className="field"><span>Email</span><input type="email" value={f.email} onChange={set('email')} /></label>
-                <label className="field"><span>Role</span>
-                    <select value={f.role} onChange={set('role')}><option value="employee">Employee</option><option value="accountant">Accountant</option></select>
+                <label className="field"><span>{tx("Full name")}</span><input value={f.fullName} onChange={set('fullName')} /></label>
+                <label className="field"><span>{tx("Email")}</span><input type="email" value={f.email} onChange={set('email')} /></label>
+                <label className="field"><span>{tx("Role")}</span>
+                    <select value={f.role} onChange={set('role')}><option value="employee">{tx("Employee")}</option><option value="accountant">{tx("Accountant")}</option></select>
                 </label>
-                <label className="field"><span>Employment type</span>
+                <label className="field"><span>{tx("Employment type")}</span>
                     <select value={f.employmentType} onChange={set('employmentType')}>{TYPES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
                 </label>
-                <label className="field"><span>Hourly rate ($)</span><input inputMode="decimal" value={f.currentRate} onChange={set('currentRate')} /></label>
-                <label className="field"><span>Start date</span><input type="date" value={f.startDate} onChange={set('startDate')} /></label>
-                <label className="field"><span>Phone</span><input value={f.phoneNumber} onChange={set('phoneNumber')} placeholder="+1…" /></label>
-                <label className="field"><span>Street</span><input value={f.street} onChange={set('street')} /></label>
-                <label className="field"><span>City</span><input value={f.city} onChange={set('city')} /></label>
-                <label className="field"><span>Province</span><input value={f.state} onChange={set('state')} /></label>
-                <label className="field"><span>Postal code</span><input value={f.postalCode} onChange={set('postalCode')} /></label>
-                <label className="field"><span>Country</span><input value={f.country} onChange={set('country')} /></label>
+                <label className="field"><span>{tx("Hourly rate ($)")}</span><input inputMode="decimal" value={f.currentRate} onChange={set('currentRate')} /></label>
+                <label className="field"><span>{tx("Start date")}</span><input type="date" value={f.startDate} onChange={set('startDate')} /></label>
+                <label className="field"><span>{tx("Phone")}</span><input value={f.phoneNumber} onChange={set('phoneNumber')} placeholder="+1…" /></label>
+                <label className="field"><span>{tx("Street")}</span><input value={f.street} onChange={set('street')} /></label>
+                <label className="field"><span>{tx("City")}</span><input value={f.city} onChange={set('city')} /></label>
+                <label className="field"><span>{tx("Province")}</span><input value={f.state} onChange={set('state')} /></label>
+                <label className="field"><span>{tx("Postal code")}</span><input value={f.postalCode} onChange={set('postalCode')} /></label>
+                <label className="field"><span>{tx("Country")}</span><input value={f.country} onChange={set('country')} /></label>
             </div>
-            <div className="eyebrow nopad">Starting balance (optional)</div>
-            <p className="muted small">If this person was already on your payroll, enter what stands between you today so the app's balance starts right.</p>
+            <div className="eyebrow nopad">{tx("Starting balance (optional)")}</div>
+            <p className="muted small">{tx("If this person was already on your payroll, enter what stands between you today so the app's balance starts right.")}</p>
             <div className="grid-2">
-                <label className="field"><span>Who owes whom</span>
-                    <select value={balDir} onChange={e => setBalDir(e.target.value as 'owe' | 'owed')}><option value="owe">I still owe them</option><option value="owed">They owe me</option></select></label>
-                <label className="field"><span>Amount ($)</span><input inputMode="decimal" value={balAmount} onChange={e => setBalAmount(e.target.value.replace(/[^0-9.]/g, ''))} placeholder="0" /></label>
+                <label className="field"><span>{tx("Who owes whom")}</span>
+                    <select value={balDir} onChange={e => setBalDir(e.target.value as 'owe' | 'owed')}><option value="owe">{tx("I still owe them")}</option><option value="owed">{tx("They owe me")}</option></select></label>
+                <label className="field"><span>{tx("Amount ($)")}</span><input inputMode="decimal" value={balAmount} onChange={e => setBalAmount(e.target.value.replace(/[^0-9.]/g, ''))} placeholder="0" /></label>
             </div>
-            <label className="check"><input type="checkbox" checked={invite} onChange={e => setInvite(e.target.checked)} /> Send an invite email now</label>
+            <label className="check"><input type="checkbox" checked={invite} onChange={e => setInvite(e.target.checked)} /> {tx("Send an invite email now")}</label>
             {error && <p className="error-line">{error}</p>}
             {note && <p className="muted">{note}</p>}
         </Dialog>

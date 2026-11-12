@@ -13,6 +13,7 @@ import RowMenu from '../components/Menu';
 import { PaymentStatsDialog } from '../components/StatsDialog';
 import { SkeletonTable } from '../components/Skeleton';
 import { useToast } from '../components/Toast';
+import { tx, txn } from '../i18n';
 
 export default function Payments() {
     const { session, org } = useAuth();
@@ -33,7 +34,7 @@ export default function Payments() {
         if (!session || !org) return;
         paymentsApi.list(session.userId, org.organization_id, showDeleted)
             .then(r => { setRows(r.payments); setError(null); })
-            .catch(e => setError(e instanceof ApiError ? e.message : 'Could not load payments'));
+            .catch(e => setError(e instanceof ApiError ? e.message : tx("Could not load payments")));
     }, [session, org, showDeleted]);
     useEffect(() => { setRows(null); load(); }, [load]);
 
@@ -45,7 +46,7 @@ export default function Payments() {
     async function act(fn: () => Promise<unknown>, message: string) {
         setBusy(true);
         try { await fn(); toast(message); setConfirm(null); load(); }
-        catch (e) { toast(e instanceof ApiError ? e.message : 'Could not do that', 'error'); }
+        catch (e) { toast(e instanceof ApiError ? e.message : tx("Could not do that"), 'error'); }
         finally { setBusy(false); }
     }
 
@@ -53,41 +54,41 @@ export default function Payments() {
     return (
         <>
             <div className="toolbar">
-                <label className="field inline"><span>Year</span>
-                    <select value={year} onChange={e => setYear(e.target.value === '' ? '' : Number(e.target.value))}><option value="">All years</option>{years.map(y => <option key={y} value={y}>{y}</option>)}</select></label>
-                <label className="field inline"><span>Person</span>
-                    <select value={person} onChange={e => setPerson(e.target.value === '' ? '' : Number(e.target.value))}><option value="">Everyone</option>{people.map(([id, name]) => <option key={id} value={id}>{name}</option>)}</select></label>
-                <label className="check"><input type="checkbox" checked={showDeleted} onChange={e => setShowDeleted(e.target.checked)} /> Show deleted</label>
+                <label className="field inline"><span>{tx("Year")}</span>
+                    <select value={year} onChange={e => setYear(e.target.value === '' ? '' : Number(e.target.value))}><option value="">{tx("All years")}</option>{years.map(y => <option key={y} value={y}>{y}</option>)}</select></label>
+                <label className="field inline"><span>{tx("Person")}</span>
+                    <select value={person} onChange={e => setPerson(e.target.value === '' ? '' : Number(e.target.value))}><option value="">{tx("Everyone")}</option>{people.map(([id, name]) => <option key={id} value={id}>{name}</option>)}</select></label>
+                <label className="check"><input type="checkbox" checked={showDeleted} onChange={e => setShowDeleted(e.target.checked)} /> {tx("Show deleted")}</label>
                 <span className="spacer" />
-                <button className="btn" onClick={() => setStats(true)}>Statistics</button>
+                <button className="btn" onClick={() => setStats(true)}>{tx("Statistics")}</button>
                 <button className="btn" onClick={async () => {
                     if (!session || !org) return;
                     try { const r = await paymentsApi.csv(session.userId, org.organization_id, year === '' ? undefined : year); if (r.csv_url) window.open(r.csv_url, '_blank', 'noopener'); }
-                    catch (e) { toast(e instanceof ApiError ? e.message : 'Could not export', 'error'); }
-                }}>Export CSV</button>
+                    catch (e) { toast(e instanceof ApiError ? e.message : tx("Could not export"), 'error'); }
+                }}>{tx("Export CSV")}</button>
             </div>
             <div className="card card-flush">
-                <div className="eyebrow">{list.filter(p => !p.is_deleted).length} {list.filter(p => !p.is_deleted).length === 1 ? 'payment' : 'payments'} · {money(total)}</div>
-                {!rows ? <SkeletonTable bare rows={6} cols={6} /> : list.length === 0 ? <div className="empty">No payments match. Payments are recorded from Payroll.</div> : (
+                <div className="eyebrow">{txn(list.filter(p => !p.is_deleted).length, '{n} payment', '{n} payments')} · {money(total)}</div>
+                {!rows ? <SkeletonTable bare rows={6} cols={6} /> : list.length === 0 ? <div className="empty">{tx("No payments match. Payments are recorded from Payroll.")}</div> : (
                     <table className="table table-hover">
-                        <thead><tr><th>Date</th><th>Person</th><th>Amount</th><th>Method</th><th>Status</th><th>Note</th><th></th></tr></thead>
+                        <thead><tr><th>{tx("Date")}</th><th>{tx("Person")}</th><th>{tx("Amount")}</th><th>{tx("Method")}</th><th>{tx("Status")}</th><th>{tx("Note")}</th><th></th></tr></thead>
                         <tbody>
                             {list.map(p => (
                                 <tr key={p.id} className={p.is_deleted ? 'muted' : ''}>
                                     <td>{dateOnly(p.payment_date)}</td>
-                                    <td><strong>{p.user_name}</strong><div className="faint small">Payment #{p.payment_number}{p.invoice_id ? ' · contractor invoice' : ''}</div></td>
+                                    <td><strong>{p.user_name}</strong><div className="faint small">{tx("Payment #")}{p.payment_number}{p.invoice_id ? tx(" · contractor invoice") : ''}</div></td>
                                     <td>{money(p.amount_paid)}</td>
                                     <td>{methodLabel(p.payment_method)}{p.transaction_id && <div className="faint small">{p.transaction_id}</div>}</td>
-                                    <td>{p.is_deleted ? <span className="pill danger">Deleted</span> : <span className={'pill' + (p.status === 'pending' ? ' caution' : p.status === 'failed' ? ' danger' : ' live')}>{p.status.charAt(0).toUpperCase() + p.status.slice(1)}</span>}</td>
+                                    <td>{p.is_deleted ? <span className="pill danger">{tx("Deleted")}</span> : <span className={'pill' + (p.status === 'pending' ? ' caution' : p.status === 'failed' ? ' danger' : ' live')}>{tx(p.status.charAt(0).toUpperCase() + p.status.slice(1))}</span>}</td>
                                     <td className="muted">{p.notes ?? ''}</td>
                                     <td className="actions">
                                         {session && org && <RowMenu items={p.is_deleted ? [
-                                            { label: 'Restore', onClick: () => act(() => paymentsApi.recover(session.userId, org.organization_id, p.id), 'Payment restored') },
+                                            { label: tx("Restore"), onClick: () => act(() => paymentsApi.recover(session.userId, org.organization_id, p.id), tx('Payment restored')) },
                                         ] : [
-                                            { label: 'Edit', onClick: () => setEditing(p) },
-                                            p.status === 'pending' && { label: 'Mark paid', onClick: () => act(() => paymentsApi.setField(session.userId, org.organization_id, p.id, 'status', 'paid'), 'Marked paid') },
-                                            p.status === 'paid' && { label: 'Mark completed', onClick: () => act(() => paymentsApi.setField(session.userId, org.organization_id, p.id, 'status', 'completed'), 'Marked completed') },
-                                            { label: 'Delete', danger: true, onClick: () => setConfirm(p) },
+                                            { label: tx("Edit"), onClick: () => setEditing(p) },
+                                            p.status === 'pending' && { label: tx("Mark paid"), onClick: () => act(() => paymentsApi.setField(session.userId, org.organization_id, p.id, 'status', 'paid'), tx('Marked paid')) },
+                                            p.status === 'paid' && { label: tx("Mark completed"), onClick: () => act(() => paymentsApi.setField(session.userId, org.organization_id, p.id, 'status', 'completed'), tx('Marked completed')) },
+                                            { label: tx("Delete"), danger: true, onClick: () => setConfirm(p) },
                                         ]} />}
                                     </td>
                                 </tr>
@@ -97,18 +98,18 @@ export default function Payments() {
                 )}
             </div>
             {stats && <PaymentStatsDialog onClose={() => setStats(false)} />}
-            {editing && <EditPaymentDialog payment={editing} onClose={() => setEditing(null)} onDone={() => { setEditing(null); toast('Payment saved'); load(); }} />}
+            {editing && <EditPaymentDialog payment={editing} onClose={() => setEditing(null)} onDone={() => { setEditing(null); toast(tx("Payment saved")); load(); }} />}
             {confirm && session && org && (
-                <Dialog title={`Delete this payment of ${money(confirm.amount_paid)}?`} subtitle={`${confirm.user_name}, ${dateOnly(confirm.payment_date)}.`} onClose={() => setConfirm(null)}
-                    footer={<SaveFooter onCancel={() => setConfirm(null)} saving={busy} label="Delete" onSave={() => act(() => paymentsApi.remove(session.userId, org.organization_id, confirm.id), 'Payment deleted')} />}>
-                    <p className="muted">What this person is owed goes back up by this amount. It can be restored later from "Show deleted".</p>
+                <Dialog title={tx("Delete this payment of {0}?", money(confirm.amount_paid))} subtitle={`${confirm.user_name}, ${dateOnly(confirm.payment_date)}.`} onClose={() => setConfirm(null)}
+                    footer={<SaveFooter onCancel={() => setConfirm(null)} saving={busy} label={tx("Delete")} onSave={() => act(() => paymentsApi.remove(session.userId, org.organization_id, confirm.id), tx('Payment deleted'))} />}>
+                    <p className="muted">{tx("What this person is owed goes back up by this amount. It can be restored later from \"Show deleted\".")}</p>
                 </Dialog>
             )}
         </>
     );
 }
 
-const METHODS: [string, string][] = [['e-transfer', 'E-transfer'], ['direct_deposit', 'Direct deposit'], ['cheque', 'Cheque'], ['cash', 'Cash'], ['pay_card', 'Pay card'], ['other', 'Other']];
+const METHODS: [string, string][] = [['e-transfer', tx("E-transfer")], ['direct_deposit', tx("Direct deposit")], ['cheque', tx("Cheque")], ['cash', tx("Cash")], ['pay_card', tx("Pay card")], ['other', tx("Other")]];
 
 // Correct a payment that was recorded wrong: the amount, the day, how it was
 // paid, its reference and note. Only the fields that changed are sent.
@@ -134,24 +135,24 @@ function EditPaymentDialog({ payment, onClose, onDone }: { payment: Payment; onC
             if (ref.trim() !== (payment.transaction_id ?? '')) await set('transaction_id', ref.trim());
             if (notes.trim() !== (payment.notes ?? '')) await set('notes', notes.trim());
             onDone();
-        } catch (e) { setError(e instanceof ApiError ? e.message : 'Could not save'); setSaving(false); }
+        } catch (e) { setError(e instanceof ApiError ? e.message : tx("Could not save")); setSaving(false); }
     }
 
     return (
-        <Dialog title={`Payment #${payment.payment_number}`} subtitle={`${payment.user_name}. What this person is owed follows the amount.`} wide onClose={onClose}
+        <Dialog title={tx("Payment #{0}", payment.payment_number)} subtitle={tx("{0}. What this person is owed follows the amount.", payment.user_name)} wide onClose={onClose}
             footer={<SaveFooter onCancel={onClose} onSave={save} saving={saving} disabled={!(amt > 0) || !date} />}>
             <div className="grid-2">
-                <label className="field"><span>Amount ($)</span><input inputMode="decimal" value={amount} onFocus={e => e.currentTarget.select()} onChange={e => setAmount(e.target.value.replace(/[^0-9.,]/g, ''))} /></label>
-                <label className="field"><span>Date paid</span><input type="date" value={date} onChange={e => setDate(e.target.value)} /></label>
-                <label className="field"><span>Method</span>
+                <label className="field"><span>{tx("Amount ($)")}</span><input inputMode="decimal" value={amount} onFocus={e => e.currentTarget.select()} onChange={e => setAmount(e.target.value.replace(/[^0-9.,]/g, ''))} /></label>
+                <label className="field"><span>{tx("Date paid")}</span><input type="date" value={date} onChange={e => setDate(e.target.value)} /></label>
+                <label className="field"><span>{tx("Method")}</span>
                     <select value={method} onChange={e => setMethod(e.target.value)}>
-                        <option value="">Not set</option>
+                        <option value="">{tx("Not set")}</option>
                         {METHODS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                         {method && !METHODS.some(([v]) => v === method) && <option value={method}>{methodLabel(method)}</option>}
                     </select></label>
-                <label className="field"><span>Reference</span><input value={ref} onChange={e => setRef(e.target.value)} placeholder="Transfer or cheque number" /></label>
+                <label className="field"><span>{tx("Reference")}</span><input value={ref} onChange={e => setRef(e.target.value)} placeholder={tx("Transfer or cheque number")} /></label>
             </div>
-            <label className="field"><span>Note</span><input value={notes} onChange={e => setNotes(e.target.value)} /></label>
+            <label className="field"><span>{tx("Note")}</span><input value={notes} onChange={e => setNotes(e.target.value)} /></label>
             {error && <p className="error-line">{error}</p>}
         </Dialog>
     );

@@ -5,6 +5,8 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useAuth } from '../auth';
 import { ApiError } from '../api/client';
+import { tx, lang } from '../i18n';
+import LangSwitch from '../components/LangSwitch';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
 
@@ -33,7 +35,7 @@ export default function Login() {
         e.preventDefault();
         setBusy(true); setError(null);
         try { await signIn(email.trim(), password); }
-        catch (err) { setError(err instanceof ApiError ? err.message : 'Could not sign in'); }
+        catch (err) { setError(err instanceof ApiError ? err.message : tx("Could not sign in")); }
         finally { setBusy(false); }
     }
 
@@ -47,10 +49,10 @@ export default function Login() {
                 callback: async r => {
                     setError(null);
                     try { await signInWithGoogle(r.credential); }
-                    catch (err) { setError(err instanceof ApiError ? err.message : 'Google sign-in failed'); }
+                    catch (err) { setError(err instanceof ApiError ? err.message : tx("Google sign-in failed")); }
                 },
             });
-            window.google.accounts.id.renderButton(googleRef.current, { theme: 'outline', size: 'large', width: 344, text: 'continue_with' });
+            window.google.accounts.id.renderButton(googleRef.current, { theme: 'outline', size: 'large', width: 344, text: 'continue_with', locale: lang() });
         };
         if (window.google) { render(); return; }
         const s = document.createElement('script');
@@ -63,23 +65,24 @@ export default function Login() {
     return (
         <div className="login-wrap">
             <form className="login-card" onSubmit={submit}>
-                <div className="brand"><img className="brand-mark" src="/favicon.svg" alt="" /><div className="brand-name">ClockInOut</div></div>
-                <h2>Sign in</h2>
-                <p className="muted">The same account you use in the app.</p>
-                <label className="field"><span>Email</span>
+                <div className="brand"><img className="brand-mark" src="/favicon.svg" alt="" /><div className="brand-name">{tx("ClockInOut")}</div></div>
+                <h2>{tx("Sign in")}</h2>
+                <p className="muted">{tx("The same account you use in the app.")}</p>
+                <label className="field"><span>{tx("Email")}</span>
                     <input type="email" autoComplete="username" value={email} onChange={e => setEmail(e.target.value)} required />
                 </label>
-                <label className="field"><span>Password</span>
+                <label className="field"><span>{tx("Password")}</span>
                     <input type="password" autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} required />
                 </label>
-                <button className="btn btn-primary btn-block" type="submit" disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}</button>
+                <button className="btn btn-primary btn-block" type="submit" disabled={busy}>{busy ? tx("Signing in…") : tx("Sign in")}</button>
                 {error && <p className="error-line">{error}</p>}
                 {GOOGLE_CLIENT_ID && (
                     <>
-                        <div className="divider">or</div>
+                        <div className="divider">{tx("or")}</div>
                         <div ref={googleRef} />
                     </>
                 )}
+                <div className="login-lang"><LangSwitch /></div>
             </form>
         </div>
     );
