@@ -7,6 +7,7 @@ import { NAV, NAV_ICONS, initialsOf } from '../layout/Shell';
 import Dialog, { SaveFooter } from '../components/Dialog';
 import ThemeSwitch from '../components/ThemeSwitch';
 import LangSwitch from '../components/LangSwitch';
+import { PlanCardView } from '../components/PlanCard';
 import RowMenu from '../components/Menu';
 import AddressSearch, { type FoundAddress } from '../components/AddressSearch';
 import MapView from '../components/MapView';
@@ -67,6 +68,7 @@ export default function Styleguide() {
                 <div className="chips" style={{ marginBottom: 14 }}><button className="chip on">Mon 16</button><button className="chip on">Tue 17</button><button className="chip">Sat 21</button><button className="chip on">Alex Rivera</button><button className="chip">Open slot</button></div>
 
                 {/* ── Maps ── */}
+                <div className="groups"><PlanCardView saving={false} onGotIt={() => {}} b={{ mode: 'shadow', status: 'early_access', plan: 'free', isAdmin: true, acknowledgedAt: null, organizations: 2, rule: { freePeople: 5, pricePerExtraPerson: 5, currency: 'CAD', noticeDays: 60 }, thisMonth: { month: '2026-11', peopleWorked: 10, accountPeople: 12, billablePeople: 7, amount: 35 }, lastMonth: { month: '2026-10', peopleWorked: 4, accountPeople: 4, billablePeople: 0, amount: 0 } }} /></div>
                 <div className="card" style={{ marginBottom: 14 }}>
                     <h2>Address search and map</h2>
                     <AddressSearch onPick={a => { setFound(a); setPin({ lat: a.lat, lon: a.lon }); }} />

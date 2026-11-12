@@ -13,6 +13,8 @@ import { useAuth, type Membership } from '../auth';
 import Dialog, { SaveFooter } from './Dialog';
 import { useToast } from './Toast';
 import { tx } from '../i18n';
+import { billingApi, type PriceRule } from '../api/billing';
+import { ruleSentence } from './PlanCard';
 
 /** Any image → a PNG no larger than 512 px on its long side, as bare base64 (what the phones send). */
 async function toLogoBase64(file: File): Promise<string> {
@@ -128,6 +130,11 @@ function CreateOrgDialog({ onClose }: { onClose: () => void }) {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF(v => ({ ...v, [k]: e.target.value }));
+    // The price rule, from the server, shown before the owner creates anything —
+    // nobody should learn about pricing later. If it cannot be read the form
+    // still works; it just does not claim the notice was shown.
+    const [rule, setRule] = useState<PriceRule | null>(null);
+    useEffect(() => { billingApi.rule().then(r => { if (r.mode !== 'off') setRule(r.rule); }).catch(() => setRule(null)); }, []);
 
     async function save() {
         if (!session || !f.name.trim()) return;
@@ -136,6 +143,7 @@ function CreateOrgDialog({ onClose }: { onClose: () => void }) {
             const r = await orgApi.create(session.userId, {
                 name: f.name.trim(), countryCode: 'CA', stateProvince: f.province, city: f.city.trim() || null, street: f.street.trim() || null, postalCode: f.postal.trim() || null,
                 payPeriodType: f.period, payPeriodStartDay: f.startDay, defaultEmploymentType: f.type, currencyCode: 'CAD', defaultBreakDuration: 30,
+                pricingNoticeShown: rule != null,
             });
             await refresh();                                   // the new membership arrives with the session
             if (r.organizationId) setOrgId(r.organizationId);  // and the dashboard opens it
@@ -160,6 +168,7 @@ function CreateOrgDialog({ onClose }: { onClose: () => void }) {
                 <label className="field"><span>{tx("Default employment type")}</span>
                     <select value={f.type} onChange={set('type')}><option value="full_time">{tx("Full-time")}</option><option value="part_time">{tx("Part-time")}</option><option value="casual">{tx("Casual")}</option><option value="contractor">{tx("Contractor")}</option></select></label>
             </div>
+            {rule && <p className="muted small">{tx('Free while ClockInOut is in early access.')} {tx('When billing starts:')} {ruleSentence(rule)} {tx('You will be told at least {0} days before billing starts.', rule.noticeDays)}</p>}
             {error && <p className="error-line">{error}</p>}
         </Dialog>
     );

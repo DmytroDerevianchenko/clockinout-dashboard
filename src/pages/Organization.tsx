@@ -9,6 +9,7 @@ import { SkeletonRecord } from '../components/Skeleton';
 import Dialog, { SaveFooter } from '../components/Dialog';
 import { OrgList, OrgLogo } from '../components/OrgManagement';
 import AddressSearch from '../components/AddressSearch';
+import PlanCard from '../components/PlanCard';
 import { tx } from '../i18n';
 
 // The server's pay period types, as the sentence the phones show for each.
@@ -61,6 +62,8 @@ export default function Organization() {
                     <div className="kv"><span>{tx("Invoice prefix")}</span><span>{row.invoice_prefix || '—'}</span></div>
                     <div className="kv"><span>{tx("Currency")}</span><span>{row.currency_code ?? tx("CAD")}</span></div>
                 </section>
+
+                <PlanCard />
 
                 <section className="card">
                     <h2>{tx("Features")}</h2>
