@@ -8,6 +8,7 @@ import { hoursApi, pairShifts, fmtDay, fmtTime, type Shift, type PeriodLite } fr
 import { jobsApi, type Job } from '../api/jobs';
 import { team, type RosterUser } from '../api/team';
 import { money, periodLabel } from '../api/payroll';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../auth';
 import { SkeletonTable } from '../components/Skeleton';
 import { useToast } from '../components/Toast';
@@ -23,8 +24,10 @@ export default function Hours() {
     const thisYear = new Date().getFullYear();
     const [year, setYear] = useState(thisYear);
     const [periods, setPeriods] = useState<PeriodLite[]>([]);
-    const [periodId, setPeriodId] = useState<number | ''>('');
-    const [person, setPerson] = useState<number | ''>('');
+    // Payroll and Team link here already filtered ("See hours"): ?person=12&period=127
+    const [params] = useSearchParams();
+    const [periodId, setPeriodId] = useState<number | ''>(() => Number(params.get('period')) || '');
+    const [person, setPerson] = useState<number | ''>(() => Number(params.get('person')) || '');
     const [jobId, setJobId] = useState<number | ''>('');
     const [people, setPeople] = useState<RosterUser[]>([]);
     const [jobs, setJobs] = useState<Job[]>([]);

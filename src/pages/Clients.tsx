@@ -4,7 +4,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { ApiError } from '../api/client';
 import { clientsApi, invoicesApi, type Client, type ClientInput } from '../api/invoices';
 import { money } from '../api/payroll';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth';
+import RowMenu from '../components/Menu';
+import { useToast } from '../components/Toast';
 import { SkeletonTable } from '../components/Skeleton';
 import Dialog, { SaveFooter } from '../components/Dialog';
 
@@ -13,24 +16,35 @@ export default function Clients() {
     const [clients, setClients] = useState<Client[] | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [editing, setEditing] = useState<Client | 'new' | null>(null);
+    const [showDeleted, setShowDeleted] = useState(false);
+    const [deleting, setDeleting] = useState<Client | null>(null);
+    const [busy, setBusy] = useState(false);
+    const navigate = useNavigate();
+    const toast = useToast();
+    async function act(fn: () => Promise<unknown>, message: string) {
+        setBusy(true);
+        try { await fn(); toast(message); setDeleting(null); load(); }
+        catch (e) { toast(e instanceof ApiError ? e.message : 'Could not do that', 'error'); }
+        finally { setBusy(false); }
+    }
     const load = useCallback(() => {
         if (!session || !org) return;
-        clientsApi.list(session.userId, org.organization_id).then(r => { setClients(r.clients.filter(c => !c.is_deleted)); setError(null); })
+        clientsApi.list(session.userId, org.organization_id, showDeleted).then(r => { setClients(r.clients); setError(null); })
             .catch(e => setError(e instanceof ApiError ? e.message : 'Could not load clients'));
-    }, [session, org]);
+    }, [session, org, showDeleted]);
     useEffect(() => { setClients(null); load(); }, [load]);
 
     if (error) return <div className="card danger">{error}</div>;
     if (!clients) return <SkeletonTable rows={5} cols={6} />;
     return (
         <>
-            <div className="toolbar"><span className="spacer" /><button className="btn btn-primary" onClick={() => setEditing('new')}>New client</button></div>
+            <div className="toolbar"><label className="check"><input type="checkbox" checked={showDeleted} onChange={e => setShowDeleted(e.target.checked)} /> Show deleted</label><span className="spacer" /><button className="btn btn-primary" onClick={() => setEditing('new')}>New client</button></div>
             <div className="card card-flush">
                 <table className="table table-hover">
-                    <thead><tr><th>Company</th><th>Contact</th><th>Email</th><th>Terms</th><th>Tax</th><th>Invoices</th><th>Owes you</th></tr></thead>
+                    <thead><tr><th>Company</th><th>Contact</th><th>Email</th><th>Terms</th><th>Tax</th><th>Invoices</th><th>Owes you</th><th></th></tr></thead>
                     <tbody>
                         {clients.map(c => (
-                            <tr key={c.id}>
+                            <tr key={c.id} className={c.is_deleted ? 'muted' : ''}>
                                 <td><button className="row-link linkish" onClick={() => setEditing(c)}><strong>{c.company_name}</strong></button>
                                     <div className="faint small">{[c.city, c.state_province].filter(Boolean).join(', ')}</div></td>
                                 <td>{c.contact_name ?? <span className="faint">—</span>}{c.phone && <div className="faint small">{c.phone}</div>}</td>
@@ -39,12 +53,27 @@ export default function Clients() {
                                 <td>{c.default_tax_rate != null ? `${(Number(c.default_tax_rate) * 100).toFixed(0)}%` : '—'}</td>
                                 <td>{c.invoice_count ?? ''}</td>
                                 <td>{(c.total_outstanding ?? 0) > 0.005 ? <span className="caution">{money(c.total_outstanding!)}</span> : (c.total_billed ?? 0) > 0.005 ? <span className="faint">settled</span> : <span className="faint">—</span>}</td>
+                                <td className="actions">
+                                    {c.is_deleted
+                                        ? session && org && <button className="btn btn-sm" disabled={busy} onClick={() => act(() => clientsApi.recover(session.userId, org.organization_id, c.id), `${c.company_name} restored`)}>Restore</button>
+                                        : <RowMenu items={[
+                                            { label: 'View or edit details', onClick: () => setEditing(c) },
+                                            { label: 'New invoice', onClick: () => navigate('/invoices', { state: { newForClient: c.id } }) },
+                                            { label: 'Delete client', danger: true, onClick: () => setDeleting(c) },
+                                        ]} />}
+                                </td>
                             </tr>
                         ))}
-                        {clients.length === 0 && <tr><td colSpan={7} className="empty">No clients yet.</td></tr>}
+                        {clients.length === 0 && <tr><td colSpan={8} className="empty">No clients yet.</td></tr>}
                     </tbody>
                 </table>
             </div>
+            {deleting && session && org && (
+                <Dialog title={`Delete ${deleting.company_name}?`} onClose={() => setDeleting(null)}
+                    footer={<SaveFooter onCancel={() => setDeleting(null)} saving={busy} label="Delete" onSave={() => act(() => clientsApi.remove(session.userId, org.organization_id, deleting.id), `${deleting.company_name} deleted`)} />}>
+                    <p className="muted">The client leaves your lists, and their unpaid invoices go with them. Paid invoices stay in your records. You can bring the client back from "Show deleted".</p>
+                </Dialog>
+            )}
             {editing && <ClientDialog client={editing === 'new' ? null : editing} onClose={() => setEditing(null)} onDone={() => { setEditing(null); load(); }} />}
         </>
     );

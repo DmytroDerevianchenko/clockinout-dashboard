@@ -49,7 +49,7 @@ export const orgApi = {
     saveDetails: (userId: number, o: OrgRow) => putOrg(userId, o),
     settings: (userId: number, organizationId: number) => apiGet<{ status: string; settings: OrgSettings }>('/settings', { userId, organizationId }),
     saveSettings: (organizationId: number, settings: OrgSettings) => api('/settings', { organizationId, settings }),
-    invoices: (userId: number, organizationId: number, year?: number) => api<{ status: string; invoices: InvoiceRow[] }>('/invoices/list', { userId, organizationId, year }),
+    invoices: (userId: number, organizationId: number, year?: number, includeDeleted = false) => api<{ status: string; invoices: InvoiceRow[] }>('/invoices/list', { userId, organizationId, year, includeDeleted }),
     invoicePdf: (userId: number, organizationId: number, invoiceId: number) => api<{ status: string; pdf_url?: string; pdfUrl?: string }>('/invoices/pdf', { userId, organizationId, invoiceId, design: 'standard' }),
     sendInvoice: (userId: number, organizationId: number, invoiceId: number) => api<{ status: string; message?: string }>('/invoices/send', { userId, organizationId, invoiceId, design: 'standard' }),
     setInvoiceStatus: (userId: number, organizationId: number, invoiceId: number, status: string, paymentMethod?: string, paidAt?: string) =>

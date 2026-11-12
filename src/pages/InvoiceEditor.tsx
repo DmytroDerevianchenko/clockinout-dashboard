@@ -16,11 +16,11 @@ type Line = { description: string; quantity: string; unit: string; unitPrice: st
 const r2 = (v: number) => Math.round(v * 100) / 100;
 const emptyLine = (): Line => ({ description: '', quantity: '1', unit: 'LS', unitPrice: '' });
 
-export default function InvoiceEditor({ invoiceId, copyOf, onClose, onDone }: { invoiceId?: number; copyOf?: number; onClose: () => void; onDone: () => void }) {
+export default function InvoiceEditor({ invoiceId, copyOf, clientId: startClient, onClose, onDone }: { invoiceId?: number; copyOf?: number; clientId?: number; onClose: () => void; onDone: () => void }) {
     const { session, org } = useAuth();
     const [clients, setClients] = useState<Client[]>([]);
     const [jobs, setJobs] = useState<Job[]>([]);
-    const [clientId, setClientId] = useState<number | ''>('');
+    const [clientId, setClientId] = useState<number | ''>(startClient ?? '');
     const [jobId, setJobId] = useState<number | ''>('');
     const [lines, setLines] = useState<Line[]>([emptyLine()]);
     const [taxRate, setTaxRate] = useState('13');

@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ApiError } from '../api/client';
 import { paymentsApi, methodLabel, type Payment } from '../api/payments';
 import { money, dateOnly } from '../api/team';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../auth';
 import Dialog, { SaveFooter } from '../components/Dialog';
 import RowMenu from '../components/Menu';
@@ -18,8 +19,10 @@ export default function Payments() {
     const thisYear = new Date().getFullYear();
     const [rows, setRows] = useState<Payment[] | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [year, setYear] = useState<number | ''>(thisYear);
-    const [person, setPerson] = useState<number | ''>('');
+    const [year, setYear] = useState<number | ''>(() => new URLSearchParams(window.location.search).get('person') ? '' : thisYear);
+    const [params] = useSearchParams();                    // Payroll links here as ?person=12
+    const [person, setPerson] = useState<number | ''>(() => Number(params.get('person')) || '');
+    const [editing, setEditing] = useState<Payment | null>(null);
     const [showDeleted, setShowDeleted] = useState(false);
     const [confirm, setConfirm] = useState<Payment | null>(null);
     const [busy, setBusy] = useState(false);
@@ -78,6 +81,7 @@ export default function Payments() {
                                         {session && org && <RowMenu items={p.is_deleted ? [
                                             { label: 'Restore', onClick: () => act(() => paymentsApi.recover(session.userId, org.organization_id, p.id), 'Payment restored') },
                                         ] : [
+                                            { label: 'Edit', onClick: () => setEditing(p) },
                                             p.status === 'pending' && { label: 'Mark paid', onClick: () => act(() => paymentsApi.setField(session.userId, org.organization_id, p.id, 'status', 'paid'), 'Marked paid') },
                                             p.status === 'paid' && { label: 'Mark completed', onClick: () => act(() => paymentsApi.setField(session.userId, org.organization_id, p.id, 'status', 'completed'), 'Marked completed') },
                                             { label: 'Delete', danger: true, onClick: () => setConfirm(p) },
@@ -89,6 +93,7 @@ export default function Payments() {
                     </table>
                 )}
             </div>
+            {editing && <EditPaymentDialog payment={editing} onClose={() => setEditing(null)} onDone={() => { setEditing(null); toast('Payment saved'); load(); }} />}
             {confirm && session && org && (
                 <Dialog title={`Delete this payment of ${money(confirm.amount_paid)}?`} subtitle={`${confirm.user_name}, ${dateOnly(confirm.payment_date)}.`} onClose={() => setConfirm(null)}
                     footer={<SaveFooter onCancel={() => setConfirm(null)} saving={busy} label="Delete" onSave={() => act(() => paymentsApi.remove(session.userId, org.organization_id, confirm.id), 'Payment deleted')} />}>
@@ -96,5 +101,54 @@ export default function Payments() {
                 </Dialog>
             )}
         </>
+    );
+}
+
+const METHODS: [string, string][] = [['e-transfer', 'E-transfer'], ['direct_deposit', 'Direct deposit'], ['cheque', 'Cheque'], ['cash', 'Cash'], ['pay_card', 'Pay card'], ['other', 'Other']];
+
+// Correct a payment that was recorded wrong: the amount, the day, how it was
+// paid, its reference and note. Only the fields that changed are sent.
+function EditPaymentDialog({ payment, onClose, onDone }: { payment: Payment; onClose: () => void; onDone: () => void }) {
+    const { session, org } = useAuth();
+    const [amount, setAmount] = useState(payment.amount_paid.toFixed(2));
+    const [date, setDate] = useState(payment.payment_date.slice(0, 10));
+    const [method, setMethod] = useState(payment.payment_method ?? '');
+    const [ref, setRef] = useState(payment.transaction_id ?? '');
+    const [notes, setNotes] = useState(payment.notes ?? '');
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const amt = Number(amount.replace(',', '.'));
+
+    async function save() {
+        if (!session || !org || !(amt > 0) || !date) return;
+        setSaving(true); setError(null);
+        const set = (field: string, value: string) => paymentsApi.setField(session.userId, org.organization_id, payment.id, field, value);
+        try {
+            if (Math.abs(amt - payment.amount_paid) > 0.004) await set('amount_paid', String(amt));
+            if (date !== payment.payment_date.slice(0, 10)) await set('payment_date', `${date}T00:00:00.000Z`);
+            if (method !== (payment.payment_method ?? '')) await set('payment_method', method);
+            if (ref.trim() !== (payment.transaction_id ?? '')) await set('transaction_id', ref.trim());
+            if (notes.trim() !== (payment.notes ?? '')) await set('notes', notes.trim());
+            onDone();
+        } catch (e) { setError(e instanceof ApiError ? e.message : 'Could not save'); setSaving(false); }
+    }
+
+    return (
+        <Dialog title={`Payment #${payment.payment_number}`} subtitle={`${payment.user_name}. What this person is owed follows the amount.`} wide onClose={onClose}
+            footer={<SaveFooter onCancel={onClose} onSave={save} saving={saving} disabled={!(amt > 0) || !date} />}>
+            <div className="grid-2">
+                <label className="field"><span>Amount ($)</span><input inputMode="decimal" value={amount} onFocus={e => e.currentTarget.select()} onChange={e => setAmount(e.target.value.replace(/[^0-9.,]/g, ''))} /></label>
+                <label className="field"><span>Date paid</span><input type="date" value={date} onChange={e => setDate(e.target.value)} /></label>
+                <label className="field"><span>Method</span>
+                    <select value={method} onChange={e => setMethod(e.target.value)}>
+                        <option value="">Not set</option>
+                        {METHODS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                        {method && !METHODS.some(([v]) => v === method) && <option value={method}>{methodLabel(method)}</option>}
+                    </select></label>
+                <label className="field"><span>Reference</span><input value={ref} onChange={e => setRef(e.target.value)} placeholder="Transfer or cheque number" /></label>
+            </div>
+            <label className="field"><span>Note</span><input value={notes} onChange={e => setNotes(e.target.value)} /></label>
+            {error && <p className="error-line">{error}</p>}
+        </Dialog>
     );
 }

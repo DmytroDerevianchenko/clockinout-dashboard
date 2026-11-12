@@ -7,9 +7,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ApiError } from '../api/client';
 import { payroll, type PayPeriod, type UserBalance, money, hours, periodLabel, n } from '../api/payroll';
 import { team, type RosterUser } from '../api/team';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth';
+import RowMenu from '../components/Menu';
+import { useToast } from '../components/Toast';
 import { SkeletonList } from '../components/Skeleton';
-import Dialog from '../components/Dialog';
+import Dialog, { SaveFooter } from '../components/Dialog';
 import { EditPayrollDialog, RecordPaymentDialog } from './PayrollEdit';
 import PayrollConfigDialog from './PayrollConfig';
 
@@ -27,6 +30,9 @@ export default function Payroll() {
     const [busy, setBusy] = useState<string | null>(null);
     const [config, setConfig] = useState(false);
     const [editing, setEditing] = useState<{ period: PayPeriod; b: UserBalance; kind: 'edit' | 'pay' } | null>(null);
+    const [rateFor, setRateFor] = useState<{ period: PayPeriod; b: UserBalance } | null>(null);
+    const navigate = useNavigate();
+    const toast = useToast();
     const [tick, setTick] = useState(0);                          // bump to reload after a save
     const reload = useCallback(() => setTick(t => t + 1), []);
 
@@ -161,6 +167,15 @@ export default function Payroll() {
                                                             <button className="btn btn-sm" disabled={busy === `${contractor ? 'invoice' : 'paystub'}-${p.id}-${b.userId}`} onClick={() => openPdf(contractor ? 'invoice' : 'paystub', b, p)}>
                                                                 {contractor ? 'Invoice PDF' : 'Paystub'}
                                                             </button>
+                                                            {/* The phone's long-press menu on a payroll row. */}
+                                                            <RowMenu items={[
+                                                                { label: 'View details', onClick: () => setDetail({ period: p, b }) },
+                                                                { label: 'Edit payroll', onClick: () => setEditing({ period: p, b, kind: 'edit' }) },
+                                                                { label: 'Record payment', onClick: () => setEditing({ period: p, b, kind: 'pay' }) },
+                                                                { label: 'See hours', onClick: () => navigate(`/hours?person=${b.userId}&period=${p.id}`) },
+                                                                { label: 'See payments', onClick: () => navigate(`/payments?person=${b.userId}`) },
+                                                                { label: 'Correct the rate for this period', onClick: () => setRateFor({ period: p, b }) },
+                                                            ]} />
                                                         </td>
                                                     </tr>
                                                 );
@@ -179,6 +194,8 @@ export default function Payroll() {
                 onEdit={() => setEditing({ period: detail.period, b: detail.b, kind: 'edit' })}
                 onPay={() => setEditing({ period: detail.period, b: detail.b, kind: 'pay' })} />}
             {config && <PayrollConfigDialog onClose={() => setConfig(false)} onDone={() => { setConfig(false); reload(); }} />}
+            {rateFor && <PeriodRateDialog period={rateFor.period} b={rateFor.b} name={names.get(rateFor.b.userId)?.full_name ?? ''} onClose={() => setRateFor(null)}
+                onDone={() => { setRateFor(null); toast('Rate corrected for this period'); reload(); }} />}
             {editing?.kind === 'edit' && <EditPayrollDialog period={editing.period} b={editing.b} name={names.get(editing.b.userId)?.full_name ?? ''} onClose={() => setEditing(null)} onDone={() => { setEditing(null); reload(); }} />}
             {editing?.kind === 'pay' && <RecordPaymentDialog period={editing.period} b={editing.b} name={names.get(editing.b.userId)?.full_name ?? ''} onClose={() => setEditing(null)} onDone={() => { setEditing(null); reload(); }} />}
         </>
@@ -234,6 +251,31 @@ function DetailsCard({ period, b, name, onClose, onEdit, onPay }: { period: PayP
             {b.modifiedAfterPayment && <p className="caution small">Changed after payment: was {money(b.netAtPayment)} net when paid, now {money(b.netAmount)}. {b.paymentChangeDetail ?? ''}</p>}
             {b.holidays?.length > 0 && <p className="muted small">Holidays in this period: {b.holidays.map(h => `${h.name} (${h.date})${h.eligible === false && h.reason ? ` — ${h.reason}` : ''}`).join('; ')}</p>}
             {b.notes && <p className="muted small">Note: {b.notes}</p>}
+        </Dialog>
+    );
+}
+
+// One person's rate for ONE period: their clock-ins in it are re-priced and
+// the period recalculates. Their current rate (Team) is not touched — this is
+// for "the raise started the week after", not for a raise.
+function PeriodRateDialog({ period, b, name, onClose, onDone }: { period: PayPeriod; b: UserBalance; name: string; onClose: () => void; onDone: () => void }) {
+    const { session, org } = useAuth();
+    const [rate, setRate] = useState(n(b.hourlyRate).toFixed(2));
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const value = Number(rate.replace(',', '.'));
+    async function save() {
+        if (!session || !org || !(value > 0)) return;
+        setSaving(true); setError(null);
+        try { await payroll.updatePeriodRate(session.userId, org.organization_id, b.userId, period.id, value); onDone(); }
+        catch (e) { setError(e instanceof ApiError ? e.message : 'Could not save'); setSaving(false); }
+    }
+    return (
+        <Dialog title={`Rate for ${periodLabel(period)}`} subtitle={`${name}. Only this period's hours are re-priced; their current rate stays as it is.`} onClose={onClose}
+            footer={<SaveFooter onCancel={onClose} onSave={save} saving={saving} disabled={!(value > 0)} />}>
+            <label className="field"><span>Hourly rate ($)</span><input inputMode="decimal" value={rate} autoFocus onFocus={e => e.currentTarget.select()} onChange={e => setRate(e.target.value.replace(/[^0-9.,]/g, ''))} /></label>
+            {b.hasPayrollRun && <p className="caution small">This period already has a calculated run. If it was edited by hand, open Edit payroll afterwards to recalculate.</p>}
+            {error && <p className="error-line">{error}</p>}
         </Dialog>
     );
 }

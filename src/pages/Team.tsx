@@ -130,6 +130,7 @@ export default function Team() {
                                             const former = u.status === 'terminated' || u.status === 'inactive';
                                             return <RowMenu items={[
                                                 { label: 'View or edit details', onClick: () => navigate(`/team/${u.id}`) },
+                                                { label: 'See hours', onClick: () => navigate(`/hours?person=${u.id}`) },
                                                 !u.joined && { label: 'Send invite email', onClick: () => quick(() => team.sendInvite(session.email, u.email, org.organization_id), `Invite sent to ${u.email}`) },
                                                 manageable && { label: u.is_admin ? 'Revoke admin access' : 'Grant admin access', onClick: () => quick(() => team.updateField(session.userId, org.organization_id, u.id, 'is_admin', u.is_admin ? 'false' : 'true'), u.is_admin ? `${u.full_name} is no longer an admin` : `${u.full_name} is now an admin`) },
                                                 manageable && (former

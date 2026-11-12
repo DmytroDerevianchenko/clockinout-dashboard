@@ -27,7 +27,8 @@ export type InvoiceDetail = {
 };
 
 export const clientsApi = {
-    list: (userId: number, organizationId: number) => api<{ status: string; clients: Client[] }>('/clients/list', { userId, organizationId }),
+    list: (userId: number, organizationId: number, includeDeleted = false) => api<{ status: string; clients: Client[] }>('/clients/list', { userId, organizationId, includeDeleted }),
+    recover: (userId: number, organizationId: number, clientId: number) => api('/clients/recover', { userId, organizationId, clientId }),
     create: (userId: number, organizationId: number, c: ClientInput) => api<{ status: string; client?: Client }>('/clients/create', { userId, organizationId, ...c }),
     update: (userId: number, organizationId: number, clientId: number, c: ClientInput) => api('/clients/update', { userId, organizationId, clientId, ...c }),
     remove: (userId: number, organizationId: number, clientId: number) => api('/clients/delete', { userId, organizationId, clientId }),
@@ -38,6 +39,7 @@ export const invoicesApi = {
     create: (userId: number, organizationId: number, inv: InvoiceInput) => api<{ status: string; invoice?: { id: number } }>('/invoices/create', { userId, organizationId, ...inv }),
     update: (userId: number, organizationId: number, invoiceId: number, inv: InvoiceInput) => api('/invoices/update', { userId, organizationId, invoiceId, ...inv }),
     remove: (userId: number, organizationId: number, invoiceId: number) => api('/invoices/delete', { userId, organizationId, invoiceId }),
+    recover: (userId: number, organizationId: number, invoiceId: number) => api('/invoices/recover', { userId, organizationId, invoiceId }),
     // A balance carried forward from before the app: the server makes a one-line,
     // no-tax invoice born 'sent' (issue date = yesterday unless given) and flags it.
     openingBalance: (userId: number, organizationId: number, clientId: number, amount: number, issueDate?: string | null, description?: string | null) =>

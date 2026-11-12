@@ -43,6 +43,9 @@ export const payroll = {
         api<{ status: string; csv_url?: string }>('/payroll-csv', { userId, organizationId, year, payPeriodId }),
     // Create or replace the run for one person + period (idempotent upsert; same body as the phones).
     saveRun: (body: Record<string, unknown>) => api('/run-payroll-for-user', body),
+    // One person's rate for ONE period only (their clock-ins in it are re-priced); the current rate is untouched.
+    updatePeriodRate: (userId: number, organizationId: number, targetUserId: number, payPeriodId: number, hourlyRate: number) =>
+        api('/update-period-rate', { userId, organizationId, targetUserId, payPeriodId, hourlyRate }),
     createPayment: (body: Record<string, unknown>) => api('/create-payment', body),
 };
 
