@@ -483,6 +483,31 @@ button.stat-link { display: flex; flex-direction: column; align-items: flex-star
 .addr-list { position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 5; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md); box-shadow: var(--shadow-pop); padding: 6px; display: grid; max-height: 260px; overflow: auto; }
 .addr-none { padding: 10px 12px; color: var(--ink-muted); font-size: 13px; }
 
+/* ── Schedule: the week as seven columns ── */
+.week-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; align-items: start; }
+.day { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 8px; display: grid; gap: 6px; min-height: 120px; align-content: start; box-shadow: var(--shadow); }
+.day.today { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); }
+.day.today .day-head strong { color: var(--accent); }
+.day-head { display: flex; align-items: center; justify-content: space-between; font-size: 12px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--ink-faint); font-weight: 600; padding: 2px 4px 4px; }
+.day-head strong { font-size: 15px; color: var(--ink); margin-left: 2px; }
+.day-head .btn-icon { margin: 0; padding: 0 8px; line-height: 22px; font-size: 16px; }
+.day-empty { color: var(--ink-faint); text-align: center; padding: 14px 0; }
+/* A planned shift is the "plan" hue: the future, not yet a fact. A draft is dashed until published. */
+.plan { display: grid; gap: 1px; text-align: left; padding: 8px 9px; border: 1px solid transparent; border-left: 3px solid var(--plan); border-radius: 9px; background: var(--plan-soft); color: var(--on-plan-soft); cursor: pointer; min-width: 0; transition: transform var(--fast) var(--ease), filter var(--fast) var(--ease); }
+.plan:hover { filter: brightness(0.97); } .plan:active { transform: scale(0.985); }
+.plan.draft { background: transparent; border: 1px dashed color-mix(in srgb, var(--plan) 60%, var(--line)); border-left: 3px solid var(--plan); color: var(--ink); }
+.plan strong, .plan .faint { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.plan-time { font-size: 12px; font-variant-numeric: tabular-nums; font-weight: 600; }
+.plan-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+.plan-tags .pill { margin: 0; font-size: 11px; padding: 0 7px; }
+.plan-tags:empty { display: none; }
+/* Choice chips (days, people) */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 6px; }
+.chip { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-size: 13px; font-weight: 500; transition: background var(--fast) var(--ease), border-color var(--fast) var(--ease), color var(--fast) var(--ease), transform var(--fast) var(--ease); }
+.chip:hover { background: var(--surface-2); } .chip:active { transform: scale(0.96); }
+.chip.on { background: var(--accent-soft); border-color: transparent; color: var(--on-accent-soft); font-weight: 600; }
+@media (max-width: 1000px) { .week-grid { grid-template-columns: 1fr; } .day { min-height: 0; } }
+
 /* Motion is a courtesy, never a requirement. */
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: 0.01ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }

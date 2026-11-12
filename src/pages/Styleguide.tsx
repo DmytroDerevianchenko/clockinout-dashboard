@@ -51,6 +51,20 @@ export default function Styleguide() {
                     <label className="org-switch"><select defaultValue="1"><option value="1">Demo Crew Ontario</option><option value="2">Demo Crew West</option></select></label>
                 </div>
 
+                {/* ── Schedule ── */}
+                <div className="week-grid" style={{ marginBottom: 14 }}>
+                    {['Mon 16', 'Tue 17', 'Wed 18', 'Thu 19', 'Fri 20', 'Sat 21', 'Sun 22'].map((d, i) => (
+                        <section key={d} className={'day' + (i === 2 ? ' today' : '')}>
+                            <header className="day-head"><span>{d.split(' ')[0]} <strong>{d.split(' ')[1]}</strong></span><button className="btn btn-sm btn-icon">+</button></header>
+                            {i < 5 ? <>
+                                <button className="plan"><span className="plan-time">7:00 AM – 3:30 PM</span><strong>Alex Rivera</strong><span className="faint small">Maple Ridge – Lot 12</span><span className="plan-tags">{i === 0 && <span className="pill live">On time</span>}{i === 1 && <span className="pill danger">12 min late</span>}</span></button>
+                                {i % 2 === 0 && <button className="plan draft"><span className="plan-time">7:00 AM – 3:30 PM</span><strong>{i === 4 ? 'Open slot' : 'Noor Haddad'}</strong><span className="faint small">Closson</span><span className="plan-tags"><span className="pill caution">Draft</span></span></button>}
+                            </> : <div className="day-empty">—</div>}
+                        </section>
+                    ))}
+                </div>
+                <div className="chips" style={{ marginBottom: 14 }}><button className="chip on">Mon 16</button><button className="chip on">Tue 17</button><button className="chip">Sat 21</button><button className="chip on">Alex Rivera</button><button className="chip">Open slot</button></div>
+
                 {/* ── Maps ── */}
                 <div className="card" style={{ marginBottom: 14 }}>
                     <h2>Address search and map</h2>

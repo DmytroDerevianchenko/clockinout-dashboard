@@ -13,6 +13,7 @@ import Payroll from './pages/Payroll';
 import Payments from './pages/Payments';
 import Jobs from './pages/Jobs';
 import Hours from './pages/Hours';
+import Schedule from './pages/Schedule';
 import Organization from './pages/Organization';
 import Clients from './pages/Clients';
 import Invoices from './pages/Invoices';
@@ -37,6 +38,7 @@ function Gate() {
                 <Route path="payments" element={<Payments />} />
                 <Route path="jobs" element={<Jobs />} />
                 <Route path="hours" element={<Hours />} />
+                <Route path="schedule" element={<Schedule />} />
                 <Route path="organization" element={<Organization />} />
                 <Route path="invoices" element={<Invoices />} />
                 <Route path="clients" element={<Clients />} />
