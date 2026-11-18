@@ -6,6 +6,7 @@
 import { useEffect, useState } from 'react';
 import { ApiError } from '../api/client';
 import { orgApi, statutoryOvertime, type OrgRow, type PayrollConfig } from '../api/org';
+import { payroll } from '../api/payroll';
 import { useAuth } from '../auth';
 import Dialog, { SaveFooter } from '../components/Dialog';
 import { SkeletonLines } from '../components/Skeleton';
@@ -20,6 +21,8 @@ export default function PayrollConfigDialog({ onClose, onDone }: { onClose: () =
     const [error, setError] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
     const [f, setF] = useState({ otOn: false, week: '44', day: '0', mult: '1.5', appliesTo: 'full_time', vacOn: false, vacRate: '0.04', holOn: false, premOn: false });
+    // Pay day rule (its own endpoint, not part of the config JSON): days after a period ends.
+    const [payDay, setPayDay] = useState('5');
     const [rows, setRows] = useState<{ name: string; amount: string }[]>([]);
 
     useEffect(() => {
@@ -28,6 +31,7 @@ export default function PayrollConfigDialog({ onClose, onDone }: { onClose: () =
             const o = r.organizations.find(x => x.id === org.organization_id);
             if (!o) { setError(tx("Organization not found")); return; }
             setRow(o);
+            setPayDay(String(o.pay_day_offset_days ?? 5));
             const c = o.payroll_config_json ?? {};
             const st = statutoryOvertime(o.country_code, o.state_province);
             setF({
@@ -72,7 +76,12 @@ export default function PayrollConfigDialog({ onClose, onDone }: { onClose: () =
             overtime_enabled: f.otOn, vacation_pay_enabled: f.vacOn,
             holiday_pay_enabled: f.holOn, holiday_premium_enabled: f.premOn && f.holOn,
         };
-        try { await orgApi.savePayrollConfig(session.userId, row, config); onDone(); }
+        try {
+            await orgApi.savePayrollConfig(session.userId, row, config);
+            const days = parseInt(payDay);
+            if (Number.isInteger(days) && days !== (row.pay_day_offset_days ?? 5)) await payroll.setPayDay(row.id, days);
+            onDone();
+        }
         catch (e) { setError(e instanceof ApiError ? e.message : tx("Could not save")); setSaving(false); }
     }
 
@@ -85,6 +94,10 @@ export default function PayrollConfigDialog({ onClose, onDone }: { onClose: () =
             {!row ? <SkeletonLines n={4} /> : (
                 <>
                     {(!row.country_code || !row.state_province) && <p className="caution small">{tx("Set the organization's address first. Taxes, overtime and holiday pay follow its province; until then Ontario is assumed.")}</p>}
+                    <div className="eyebrow nopad">{tx("Pay day")}</div>
+                    <label className="field"><span>{tx("Days after the pay period ends")}</span>
+                        <input inputMode="numeric" value={payDay} onChange={e => setPayDay(e.target.value.replace(/\D/g, '').slice(0, 2))} style={{ maxWidth: 120 }} />
+                        <small className="muted">{tx("5 = a period that ends on Sunday is paid the following Friday. The pay date decides which year a pay counts in — year-to-date and T4: a December period paid in January belongs to the new year. A change applies to periods that have not ended yet.")}</small></label>
                     <div className="eyebrow nopad">{tx("Overtime rules")} <button type="button" className="btn btn-sm" style={{ marginLeft: 10 }} onClick={loadDefaults}>{tx("Load defaults for")} {row.state_province || tx("this province")}</button></div>
                     <label className="check"><input type="checkbox" checked={f.otOn} onChange={e => set('otOn', e.target.checked)} /> {tx("Overtime enabled")}</label>
                     <div className="grid-2">

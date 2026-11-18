@@ -29,6 +29,10 @@ export type UserBalance = {
 };
 export type PayPeriod = {
     id: number; organization_id: number; start_date: string; end_date: string; status: string; type: string;
+    // 'YYYY-MM-DD' — the day the period is PAID. Its year is the year the pay
+    // counts in (year-to-date, T4): a December period paid in January is the
+    // new year's first pay. Absent on an older server.
+    pay_date?: string | null;
     notes: string | null; userBalances: UserBalance[];
 };
 export type PayPeriodsReply = { status: string; payPeriods: PayPeriod[]; availableYears: number[]; earnedYearly: number; paidYearly: number };
@@ -51,11 +55,16 @@ export const payroll = {
     updatePeriodRate: (userId: number, organizationId: number, targetUserId: number, payPeriodId: number, hourlyRate: number) =>
         api('/update-period-rate', { userId, organizationId, targetUserId, payPeriodId, hourlyRate }),
     createPayment: (body: Record<string, unknown>) => api('/create-payment', body),
+    // The pay day rule: the crew is paid this many days after a period ends.
+    setPayDay: (organizationId: number, offsetDays: number) =>
+        api<{ status: string; offsetDays: number; periodsUpdated: number }>('/set-pay-day', { organizationId, offsetDays }),
 };
 
 export const n = (v: unknown): number => (v == null || v === '' ? 0 : Number(v));
 export const money = (v: unknown) => `$${n(v).toLocaleString(lang(), { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 export const hours = (v: unknown) => hoursText(n(v));
+/** "Jan 2, 2026" from a calendar date — no time-zone step, it is already a day. */
+export const payDateLabel = (iso: string) => new Date(iso.slice(0, 10) + 'T12:00:00').toLocaleDateString(lang(), { year: 'numeric', month: 'short', day: 'numeric' });
 export const periodLabel = (p: { start_date: string; end_date: string }) => {
     const f = (iso: string) => new Date(iso).toLocaleDateString(lang(), { month: 'short', day: 'numeric', timeZone: 'America/Toronto' });
     return `${f(p.start_date)} – ${f(p.end_date)}`;

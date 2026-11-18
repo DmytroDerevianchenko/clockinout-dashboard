@@ -5,7 +5,7 @@
 // Editing (Edit Payroll, record a payment, configuration) is the next slice.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ApiError } from '../api/client';
-import { payroll, type PayPeriod, type UserBalance, money, hours, periodLabel, n } from '../api/payroll';
+import { payroll, type PayPeriod, type UserBalance, money, hours, periodLabel, payDateLabel, n } from '../api/payroll';
 import { team, type RosterUser } from '../api/team';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth';
@@ -135,6 +135,8 @@ export default function Payroll() {
                                 <div>
                                     <strong>{periodLabel(p)}</strong>
                                     <div className="faint small">{txn(t.people, '{n} person', '{n} people')} · {hours(t.hours)}{p.status !== 'open' ? ` · ${p.status}` : ''}</div>
+                                    {/* The pay date decides the YEAR a period counts in; say so when it is not the year on screen. */}
+                                    {p.pay_date && <div className="faint small">{tx('Pay date {0}', payDateLabel(p.pay_date))}{Number(p.pay_date.slice(0, 4)) !== year ? <span className="caution"> · {tx('counts in {0}', p.pay_date.slice(0, 4))}</span> : null}</div>}
                                 </div>
                                 <div className="period-right">
                                     <div className="period-sums">

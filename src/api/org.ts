@@ -5,6 +5,7 @@ import { api, apiBlob, apiGet } from './client';
 
 export type OrgRow = {
     id: number; name: string; default_break_duration: number | null; pay_period_type: string;
+    pay_day_offset_days?: number | null;   // the crew is paid this many days after a period ends
     street: string | null; unit_number: string | null; city: string | null; state_province: string | null; postal_code: string | null; country_code: string | null;
     tax_config_json: Record<string, unknown> | null; payroll_config_json: PayrollConfig | null;
     default_employment_type: string | null; pay_period_start_day: string | null; currency_code: string | null; invoice_prefix: string | null; logo_show: boolean; has_logo?: boolean;
