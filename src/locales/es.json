@@ -78,6 +78,7 @@
     "Break (minutes)": "Descanso (minutos)",
     "Breaks": "Descansos",
     "Bring the nailer": "Traer la clavadora",
+    "Building…": "Generando…",
     "Business number": "Número de empresa",
     "By method": "Por método",
     "By month": "Por mes",
@@ -102,6 +103,7 @@
     "Choose": "Elegir",
     "Choose a client": "Elija un cliente",
     "Choose a job": "Elija un trabajo",
+    "Choose a person": "Elija una persona",
     "City": "Ciudad",
     "Clear": "Borrar",
     "Click the map to move the pin to the exact spot.": "Haga clic en el mapa para mover el marcador al punto exacto.",
@@ -371,6 +373,7 @@
     "No": "No",
     "No address found. Try adding the city, or type it in the fields below.": "No se encontró la dirección. Pruebe a agregar la ciudad o escríbala en los campos de abajo.",
     "No breaks deducted": "Sin descuento de descansos",
+    "No calculated pay periods for this person in {0}.": "No hay períodos de pago calculados para esta persona en {0}.",
     "No clients yet.": "Aún no hay clientes.",
     "No completed shifts in these days.": "No hay turnos completados en estos días.",
     "No hours in this period.": "No hay horas en este período.",
@@ -419,6 +422,7 @@
     "On the clock{0} since {1} {2}. The shift ends now.": "En turno{0} desde {1} {2}. El turno termina ahora.",
     "On time": "A tiempo",
     "On · {0} m": "Activada · {0} m",
+    "One file with a page per pay period, oldest first — for a bank, a landlord or a tax office that asks for the whole year.": "Un archivo con una página por período de pago, del más antiguo al más reciente: para un banco, un arrendador o una oficina de impuestos que pide todo el año.",
     "Open": "Abierto",
     "Open now": "Abierta ahora",
     "Open slot": "Puesto abierto",
@@ -471,6 +475,7 @@
     "Payroll configuration": "Configuración de nómina",
     "Payroll statistics": "Estadísticas de nómina",
     "Paystub": "Recibo de pago",
+    "Paystubs": "Recibos de pago",
     "Pending": "Pendiente",
     "People": "Personas",
     "Period": "Período",
@@ -555,6 +560,7 @@
     "Set up payroll rules. Changes apply to pay periods calculated from now on; periods already calculated keep their figures — open one and use Edit payroll to change it.": "Configure las reglas de nómina. Los cambios se aplican a los períodos de pago calculados a partir de ahora; los ya calculados conservan sus cifras: abra uno y use Editar nómina para cambiarlo.",
     "Set when the shift ends.": "Indique cuándo termina el turno.",
     "Settled": "Al día",
+    "Several paystubs in one PDF": "Varios recibos en un solo PDF",
     "Shift note": "Nota del turno",
     "Shift removed": "Turno eliminado",
     "Shift saved": "Turno guardado",
@@ -705,6 +711,7 @@
     "min": "min",
     "more.": "más.",
     "net when paid, now": "neto al pagar, ahora",
+    "net {0}": "neto {0}",
     "net {0} · paid {1}": "neto {0} · pagado {1}",
     "no email": "sin correo",
     "no hours worked on the holiday": "sin horas trabajadas en el día festivo",
@@ -871,6 +878,26 @@
       "one": "{n} persona trabajó",
       "other": "{n} personas trabajaron",
       "many": "{n} personas trabajaron"
+    },
+    "Open {n} paystubs as one PDF": {
+      "one": "Abrir {n} recibo en un PDF",
+      "other": "Abrir {n} recibos en un solo PDF",
+      "many": "Abrir {n} recibos en un solo PDF"
+    },
+    "Open the PDF ({n} paystubs)": {
+      "one": "Abrir el PDF ({n} recibo)",
+      "other": "Abrir el PDF ({n} recibos)",
+      "many": "Abrir el PDF ({n} recibos)"
+    },
+    "+ {n} periods ticked in other years": {
+      "one": "+ {n} período marcado en otro año",
+      "other": "+ {n} períodos marcados en otros años",
+      "many": "+ {n} períodos marcados en otros años"
+    },
+    "{n} periods had no payroll yet and were left out": {
+      "one": "{n} período aún no tenía nómina y se omitió",
+      "other": "{n} períodos aún no tenían nómina y se omitieron",
+      "many": "{n} períodos aún no tenían nómina y se omitieron"
     }
   }
 }

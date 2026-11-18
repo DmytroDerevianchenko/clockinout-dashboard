@@ -78,6 +78,7 @@
     "Break (minutes)": "Перерва (хвилин)",
     "Breaks": "Перерви",
     "Bring the nailer": "Взяти цвяхозабивач",
+    "Building…": "Створення…",
     "Business number": "Номер підприємства",
     "By method": "За способом оплати",
     "By month": "За місяцями",
@@ -102,6 +103,7 @@
     "Choose": "Обрати",
     "Choose a client": "Оберіть клієнта",
     "Choose a job": "Оберіть об’єкт",
+    "Choose a person": "Оберіть особу",
     "City": "Місто",
     "Clear": "Очистити",
     "Click the map to move the pin to the exact spot.": "Клацніть на карті, щоб пересунути мітку в точне місце.",
@@ -371,6 +373,7 @@
     "No": "Ні",
     "No address found. Try adding the city, or type it in the fields below.": "Адресу не знайдено. Спробуйте додати місто або введіть її в поля нижче.",
     "No breaks deducted": "Перерви не вираховуються",
+    "No calculated pay periods for this person in {0}.": "Для цієї особи немає розрахованих періодів за {0}.",
     "No clients yet.": "Клієнтів ще немає.",
     "No completed shifts in these days.": "За ці дні немає завершених змін.",
     "No hours in this period.": "У цьому періоді немає годин.",
@@ -419,6 +422,7 @@
     "On the clock{0} since {1} {2}. The shift ends now.": "На зміні{0} з {1} {2}. Зміна завершується зараз.",
     "On time": "Вчасно",
     "On · {0} m": "Увімкнено · {0} м",
+    "One file with a page per pay period, oldest first — for a bank, a landlord or a tax office that asks for the whole year.": "Один файл, по сторінці на кожен розрахунковий період, від найдавнішого: для банку, орендодавця чи податкової, що просять листи за весь рік.",
     "Open": "Відкрито",
     "Open now": "Відкрита зараз",
     "Open slot": "Вільне місце",
@@ -471,6 +475,7 @@
     "Payroll configuration": "Налаштування зарплати",
     "Payroll statistics": "Статистика зарплати",
     "Paystub": "Розрахунковий лист",
+    "Paystubs": "Розрахункові листи",
     "Pending": "В очікуванні",
     "People": "Люди",
     "Period": "Період",
@@ -555,6 +560,7 @@
     "Set up payroll rules. Changes apply to pay periods calculated from now on; periods already calculated keep their figures — open one and use Edit payroll to change it.": "Налаштуйте правила зарплати. Зміни діють для періодів, розрахованих відтепер; уже розраховані зберігають свої цифри: відкрийте період і скористайтеся «Редагувати зарплату», щоб змінити його.",
     "Set when the shift ends.": "Вкажіть, коли закінчується зміна.",
     "Settled": "Сплачено",
+    "Several paystubs in one PDF": "Кілька розрахункових листів в одному PDF",
     "Shift note": "Примітка до зміни",
     "Shift removed": "Зміну видалено",
     "Shift saved": "Зміну збережено",
@@ -705,6 +711,7 @@
     "min": "хв",
     "more.": "інш.",
     "net when paid, now": "чистими на момент виплати, тепер",
+    "net {0}": "чистими {0}",
     "net {0} · paid {1}": "чистими {0} · виплачено {1}",
     "no email": "немає пошти",
     "no hours worked on the holiday": "у святковий день годин не відпрацьовано",
@@ -890,6 +897,30 @@
       "few": "працювали {n} особи",
       "many": "працювало {n} осіб",
       "other": "працювали {n} особи"
+    },
+    "Open {n} paystubs as one PDF": {
+      "one": "Відкрити {n} лист одним PDF",
+      "few": "Відкрити {n} листи одним PDF",
+      "many": "Відкрити {n} листів одним PDF",
+      "other": "Відкрити {n} листи одним PDF"
+    },
+    "Open the PDF ({n} paystubs)": {
+      "one": "Відкрити PDF ({n} лист)",
+      "few": "Відкрити PDF ({n} листи)",
+      "many": "Відкрити PDF ({n} листів)",
+      "other": "Відкрити PDF ({n} листи)"
+    },
+    "+ {n} periods ticked in other years": {
+      "one": "+ {n} період позначено в іншому році",
+      "few": "+ {n} періоди позначено в інших роках",
+      "many": "+ {n} періодів позначено в інших роках",
+      "other": "+ {n} періоди позначено в інших роках"
+    },
+    "{n} periods had no payroll yet and were left out": {
+      "one": "{n} період ще без розрахунку пропущено",
+      "few": "{n} періоди ще без розрахунку пропущено",
+      "many": "{n} періодів ще без розрахунку пропущено",
+      "other": "{n} періоди ще без розрахунку пропущено"
     }
   }
 }

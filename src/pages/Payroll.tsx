@@ -16,6 +16,7 @@ import { SkeletonList } from '../components/Skeleton';
 import Dialog, { SaveFooter } from '../components/Dialog';
 import { EditPayrollDialog, RecordPaymentDialog } from './PayrollEdit';
 import PayrollConfigDialog from './PayrollConfig';
+import PaystubsDialog from '../components/PaystubsDialog';
 import { tx, txn, perHour } from '../i18n';
 
 type Names = Map<number, RosterUser>;
@@ -34,6 +35,8 @@ export default function Payroll() {
     const [editing, setEditing] = useState<{ period: PayPeriod; b: UserBalance; kind: 'edit' | 'pay' } | null>(null);
     const [stats, setStats] = useState(false);
     const [rateFor, setRateFor] = useState<{ period: PayPeriod; b: UserBalance } | null>(null);
+    // Several paystubs in one PDF: null = closed, otherwise who it opens on.
+    const [stubsFor, setStubsFor] = useState<{ person?: number } | null>(null);
     const navigate = useNavigate();
     const toast = useToast();
     const [tick, setTick] = useState(0);                          // bump to reload after a save
@@ -113,6 +116,7 @@ export default function Payroll() {
                 </label>
                 <div className="muted small">{tx("Earned this year")} {money(data.earned)} {tx("· paid")} {money(data.paid)}</div>
                 <span className="spacer" />
+                <button className="btn" onClick={() => setStubsFor({})}>{tx("Paystubs")}</button>
                 <button className="btn" onClick={() => setStats(true)}>{tx("Statistics")}</button>
                 <button className="btn" onClick={() => setConfig(true)}>{tx("Configuration")}</button>
                 <button className="btn" disabled={busy === `csv-year-`} onClick={() => openPdf('csv')}>{tx("Export year CSV")}</button>
@@ -176,6 +180,7 @@ export default function Payroll() {
                                                                 { label: tx("View details"), onClick: () => setDetail({ period: p, b }) },
                                                                 { label: tx("Edit payroll"), onClick: () => setEditing({ period: p, b, kind: 'edit' }) },
                                                                 { label: tx("Record payment"), onClick: () => setEditing({ period: p, b, kind: 'pay' }) },
+                                                                ...(contractor ? [] : [{ label: tx("Several paystubs in one PDF"), onClick: () => setStubsFor({ person: b.userId }) }]),
                                                                 { label: tx("See hours"), onClick: () => navigate(`/hours?person=${b.userId}&period=${p.id}`) },
                                                                 { label: tx("See payments"), onClick: () => navigate(`/payments?person=${b.userId}`) },
                                                                 { label: tx("Correct the rate for this period"), onClick: () => setRateFor({ period: p, b }) },
@@ -198,6 +203,8 @@ export default function Payroll() {
                 onEdit={() => setEditing({ period: detail.period, b: detail.b, kind: 'edit' })}
                 onPay={() => setEditing({ period: detail.period, b: detail.b, kind: 'pay' })} />}
             {config && <PayrollConfigDialog onClose={() => setConfig(false)} onDone={() => { setConfig(false); reload(); }} />}
+            {stubsFor && <PaystubsDialog people={[...names.values()].sort((a, b) => a.full_name.localeCompare(b.full_name))} years={data.years}
+                defaultPerson={stubsFor.person} defaultYear={year} onClose={() => { setStubsFor(null); reload(); }} />}
             {stats && <PayrollStatsDialog onClose={() => setStats(false)} />}
             {rateFor && <PeriodRateDialog period={rateFor.period} b={rateFor.b} name={names.get(rateFor.b.userId)?.full_name ?? ''} onClose={() => setRateFor(null)}
                 onDone={() => { setRateFor(null); toast(tx("Rate corrected for this period")); reload(); }} />}

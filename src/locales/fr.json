@@ -78,6 +78,7 @@
     "Break (minutes)": "Pause (minutes)",
     "Breaks": "Pauses",
     "Bring the nailer": "Apporter la cloueuse",
+    "Building…": "Création…",
     "Business number": "Numéro d’entreprise",
     "By method": "Par mode de paiement",
     "By month": "Par mois",
@@ -102,6 +103,7 @@
     "Choose": "Choisir",
     "Choose a client": "Choisissez un client",
     "Choose a job": "Choisissez un projet",
+    "Choose a person": "Choisissez une personne",
     "City": "Ville",
     "Clear": "Effacer",
     "Click the map to move the pin to the exact spot.": "Cliquez sur la carte pour déplacer le repère à l’endroit exact.",
@@ -371,6 +373,7 @@
     "No": "Non",
     "No address found. Try adding the city, or type it in the fields below.": "Aucune adresse trouvée. Essayez d’ajouter la ville ou saisissez-la dans les champs ci-dessous.",
     "No breaks deducted": "Aucune pause déduite",
+    "No calculated pay periods for this person in {0}.": "Aucune période de paie calculée pour cette personne en {0}.",
     "No clients yet.": "Aucun client pour l’instant.",
     "No completed shifts in these days.": "Aucun quart terminé durant ces jours.",
     "No hours in this period.": "Aucune heure dans cette période.",
@@ -419,6 +422,7 @@
     "On the clock{0} since {1} {2}. The shift ends now.": "En service{0} depuis {1} {2}. Le quart se termine maintenant.",
     "On time": "À l’heure",
     "On · {0} m": "Activé · {0} m",
+    "One file with a page per pay period, oldest first — for a bank, a landlord or a tax office that asks for the whole year.": "Un fichier avec une page par période de paie, de la plus ancienne à la plus récente : pour une banque, un propriétaire ou un bureau d’impôt qui demande toute l’année.",
     "Open": "Ouverte",
     "Open now": "Ouverte",
     "Open slot": "Poste ouvert",
@@ -471,6 +475,7 @@
     "Payroll configuration": "Configuration de la paie",
     "Payroll statistics": "Statistiques de la paie",
     "Paystub": "Bulletin de paie",
+    "Paystubs": "Bulletins de paie",
     "Pending": "En attente",
     "People": "Personnes",
     "Period": "Période",
@@ -555,6 +560,7 @@
     "Set up payroll rules. Changes apply to pay periods calculated from now on; periods already calculated keep their figures — open one and use Edit payroll to change it.": "Configurez les règles de paie. Les changements s’appliquent aux périodes de paie calculées à partir de maintenant ; les périodes déjà calculées gardent leurs chiffres : ouvrez-en une et utilisez Modifier la paie pour la changer.",
     "Set when the shift ends.": "Indiquez quand le quart se termine.",
     "Settled": "Réglé",
+    "Several paystubs in one PDF": "Plusieurs bulletins dans un seul PDF",
     "Shift note": "Note du quart",
     "Shift removed": "Quart supprimé",
     "Shift saved": "Quart enregistré",
@@ -705,6 +711,7 @@
     "min": "min",
     "more.": "de plus.",
     "net when paid, now": "net au moment du paiement, maintenant",
+    "net {0}": "net {0}",
     "net {0} · paid {1}": "net {0} · payé {1}",
     "no email": "aucun courriel",
     "no hours worked on the holiday": "aucune heure travaillée le jour férié",
@@ -871,6 +878,26 @@
       "one": "{n} personne a travaillé",
       "other": "{n} personnes ont travaillé",
       "many": "{n} personnes ont travaillé"
+    },
+    "Open {n} paystubs as one PDF": {
+      "one": "Ouvrir {n} bulletin en un PDF",
+      "other": "Ouvrir {n} bulletins en un seul PDF",
+      "many": "Ouvrir {n} bulletins en un seul PDF"
+    },
+    "Open the PDF ({n} paystubs)": {
+      "one": "Ouvrir le PDF ({n} bulletin)",
+      "other": "Ouvrir le PDF ({n} bulletins)",
+      "many": "Ouvrir le PDF ({n} bulletins)"
+    },
+    "+ {n} periods ticked in other years": {
+      "one": "+ {n} période cochée dans une autre année",
+      "other": "+ {n} périodes cochées dans d’autres années",
+      "many": "+ {n} périodes cochées dans d’autres années"
+    },
+    "{n} periods had no payroll yet and were left out": {
+      "one": "{n} période sans paie calculée a été omise",
+      "other": "{n} périodes sans paie calculée ont été omises",
+      "many": "{n} périodes sans paie calculée ont été omises"
     }
   }
 }

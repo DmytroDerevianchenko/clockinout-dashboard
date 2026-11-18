@@ -38,6 +38,9 @@ export const payroll = {
         apiGet<PayPeriodsReply>('/pay-periods', { userId, organizationId, year }),
     paystub: (user_id: number, organization_id: number, pay_period_id: number) =>
         api<{ status: string; pdf_url?: string }>('/generate-paystub', { user_id, organization_id, pay_period_id, design: 'standard' }),
+    // Several pay periods of one person as ONE PDF (a page per period, oldest first).
+    paystubs: (user_id: number, organization_id: number, pay_period_ids: number[]) =>
+        api<{ status: string; pdf_url?: string; count?: number; skipped?: number[] }>('/generate-paystubs', { user_id, organization_id, pay_period_ids, design: 'standard' }),
     contractorInvoice: (user_id: number, organization_id: number, pay_period_id: number) =>
         api<{ status: string; pdf_url?: string }>('/contractor-invoice', { user_id, organization_id, pay_period_id, design: 'standard' }),
     csv: (userId: number, organizationId: number, year: number, payPeriodId?: number) =>
