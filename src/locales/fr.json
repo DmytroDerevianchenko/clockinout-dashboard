@@ -786,7 +786,20 @@
     "— the CRA formula on this gross": "— la formule de l’ARC sur ce brut",
     "— under 18, over 70, or a CPT30 election on file": "— moins de 18 ans, plus de 70 ans ou choix CPT30 au dossier",
     "‹ Team": "‹ Équipe",
-    "→ expected": "→ prévu"
+    "→ expected": "→ prévu",
+    "Email (optional)": "Courriel (facultatif)",
+    "No email yet? Leave it empty and add it later. They can sign in once you have added their email and sent the invitation.": "Pas encore d’adresse ? Laissez le champ vide et ajoutez-la plus tard. La personne pourra se connecter une fois son adresse ajoutée et l’invitation envoyée.",
+    "This email already belongs to a ClockInOut account.": "Cette adresse appartient déjà à un compte ClockInOut.",
+    "They join by invitation: when they accept, they appear on your team with their own account. You can set their rate and other details right after.": "La personne se joint par invitation : lorsqu’elle l’accepte, elle apparaît dans votre équipe avec son propre compte. Vous pourrez ensuite définir son taux et ses autres renseignements.",
+    "Send invitation": "Envoyer l’invitation",
+    "Invitation sent to {0}.": "Invitation envoyée à {0}.",
+    "No email yet": "Pas encore d’adresse",
+    "Add their email first, then send the invitation.": "Ajoutez d’abord son adresse courriel, puis envoyez l’invitation.",
+    "This email already has an account": "Cette adresse a déjà un compte",
+    "{0} is already signed up to ClockInOut — most likely {1} created an account before being connected to your team.": "{0} est déjà inscrit à ClockInOut : {1} a très probablement créé un compte avant d’être relié à votre équipe.",
+    "this person": "cette personne",
+    "Send an invitation for this record. When they accept it in the app, their account takes the record over, with the hours and pay you have entered. Nothing is lost, and no second person appears on your team.": "Envoyez une invitation pour cette fiche. Lorsque la personne l’accepte dans l’application, son compte reprend la fiche, avec les heures et la paie que vous avez saisies. Rien n’est perdu, et aucune deuxième personne n’apparaît dans votre équipe.",
+    "Invitation sent to {0}. This record becomes theirs when they accept.": "Invitation envoyée à {0}. Cette fiche sera la sienne dès son acceptation."
   },
   "plurals": {
     "Added {n} shifts to {0}": {

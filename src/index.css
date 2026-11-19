@@ -521,3 +521,8 @@ button.stat-link { display: flex; flex-direction: column; align-items: flex-star
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: 0.01ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
+
+/* A quiet "do this instead" box inside a dialog (Add member: the email already has an account). */
+.caution-card { margin-top: 12px; border-color: var(--caution-ink, currentColor); display: grid; gap: 8px; justify-items: start; }
+.caution-card p { margin: 0; }
+.field small { display: block; margin-top: 4px; }

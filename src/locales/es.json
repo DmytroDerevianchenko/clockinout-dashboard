@@ -786,7 +786,20 @@
     "— the CRA formula on this gross": "— la fórmula de la CRA sobre este bruto",
     "— under 18, over 70, or a CPT30 election on file": "— menor de 18, mayor de 70 o con una elección CPT30 en archivo",
     "‹ Team": "‹ Equipo",
-    "→ expected": "→ esperado"
+    "→ expected": "→ esperado",
+    "Email (optional)": "Correo (opcional)",
+    "No email yet? Leave it empty and add it later. They can sign in once you have added their email and sent the invitation.": "¿Aún no tienes su correo? Déjalo vacío y añádelo después. Podrá iniciar sesión cuando hayas añadido su correo y enviado la invitación.",
+    "This email already belongs to a ClockInOut account.": "Este correo ya pertenece a una cuenta de ClockInOut.",
+    "They join by invitation: when they accept, they appear on your team with their own account. You can set their rate and other details right after.": "Se une por invitación: cuando la acepte, aparecerá en tu equipo con su propia cuenta. Después podrás fijar su tarifa y demás datos.",
+    "Send invitation": "Enviar invitación",
+    "Invitation sent to {0}.": "Invitación enviada a {0}.",
+    "No email yet": "Aún sin correo",
+    "Add their email first, then send the invitation.": "Primero añade su correo y luego envía la invitación.",
+    "This email already has an account": "Este correo ya tiene una cuenta",
+    "{0} is already signed up to ClockInOut — most likely {1} created an account before being connected to your team.": "{0} ya está registrado en ClockInOut; lo más probable es que {1} haya creado una cuenta antes de estar conectado a tu equipo.",
+    "this person": "esta persona",
+    "Send an invitation for this record. When they accept it in the app, their account takes the record over, with the hours and pay you have entered. Nothing is lost, and no second person appears on your team.": "Envía una invitación para este registro. Cuando la acepte en la aplicación, su cuenta se quedará con el registro, con las horas y los pagos que has introducido. No se pierde nada y no aparece una segunda persona en tu equipo.",
+    "Invitation sent to {0}. This record becomes theirs when they accept.": "Invitación enviada a {0}. Este registro será suyo cuando la acepte."
   },
   "plurals": {
     "Added {n} shifts to {0}": {

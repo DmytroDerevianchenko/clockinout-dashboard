@@ -105,7 +105,7 @@ export default function Team() {
                                             {!u.joined && <span className="pill caution">{tx("Not joined")}</span>}
                                         </Link>
                                         <div className="faint small">
-                                            {u.is_clocked_in ? tx("On the clock{0} since {1}", u.current_job_name ? ` · ${u.current_job_name}` : '', timeOnly(u.clock_in_time)) : u.email}
+                                            {u.is_clocked_in ? tx("On the clock{0} since {1}", u.current_job_name ? ` · ${u.current_job_name}` : '', timeOnly(u.clock_in_time)) : (u.email || tx("No email yet"))}
                                         </div>
                                     </td>
                                     <td>{employmentLabel(u.employment_type)}{u.is_admin && u.role !== 'employer' ? <span className="pill">{tx("Admin")}</span> : null}{u.role === 'employer' ? <span className="pill">{tx("Owner")}</span> : null}</td>
@@ -133,7 +133,9 @@ export default function Team() {
                                             return <RowMenu items={[
                                                 { label: tx("View or edit details"), onClick: () => navigate(`/team/${u.id}`) },
                                                 { label: tx("See hours"), onClick: () => navigate(`/hours?person=${u.id}`) },
-                                                !u.joined && { label: tx("Send invite email"), onClick: () => quick(() => team.sendInvite(session.email, u.email, org.organization_id), tx('Invite sent to {0}', u.email)) },
+                                                !u.joined && { label: tx("Send invite email"), onClick: () => u.email
+                                                    ? quick(() => team.sendInvite(session.email, u.email, org.organization_id), tx('Invite sent to {0}', u.email))
+                                                    : (toast(tx("Add their email first, then send the invitation.")), navigate(`/team/${u.id}`)) },
                                                 manageable && { label: u.is_admin ? tx("Revoke admin access") : tx("Grant admin access"), onClick: () => quick(() => team.updateField(session.userId, org.organization_id, u.id, 'is_admin', u.is_admin ? 'false' : 'true'), u.is_admin ? tx('{0} is no longer an admin', u.full_name) : tx('{0} is now an admin', u.full_name)) },
                                                 manageable && (former
                                                     ? { label: tx("Reactivate"), onClick: () => setMemberAction({ user: u, action: 'reactivate' }) }

@@ -18,7 +18,8 @@ import { tx, hoursText, perHour } from '../i18n';
 
 type Editor =
     | { kind: 'text'; field: string; label: string; value: string; type?: string }
-    | { kind: 'status' } | { kind: 'type' } | { kind: 'rate' } | { kind: 'tax' } | { kind: 'jurisdiction' } | { kind: 'clockin' } | { kind: 'end' } | { kind: 'balance' } | { kind: 'member'; action: MemberAction };
+    | { kind: 'status' } | { kind: 'type' } | { kind: 'rate' } | { kind: 'tax' } | { kind: 'jurisdiction' } | { kind: 'clockin' } | { kind: 'end' } | { kind: 'balance' } | { kind: 'member'; action: MemberAction }
+    | { kind: 'link'; email: string };          // the typed email already has an account → invitation for this record
 
 function Row({ label, value, placeholder, onClick, locked, tone }: { label: string; value?: ReactNode; placeholder?: string; onClick?: () => void; locked?: boolean; tone?: 'caution' | 'danger' }) {
     const empty = value === undefined || value === null || value === '';
@@ -53,7 +54,12 @@ export default function Person() {
     const save = useCallback(async (field: string, value: string) => {
         if (!session || !org || !user) return;
         try { await team.updateField(session.userId, org.organization_id, user.id, field, value); setEditor(null); await reload(); }
-        catch (e) { toast(e instanceof ApiError ? e.message : tx("Could not save"), 'error'); }
+        catch (e) {
+            // The person signed up on their own before being connected: the way
+            // forward is an invitation for THIS record, not an error message.
+            if (field === 'email' && e instanceof ApiError && e.code === 'EMAIL_HAS_ACCOUNT') { setEditor({ kind: 'link', email: value }); return; }
+            toast(e instanceof ApiError ? e.message : tx("Could not save"), 'error');
+        }
     }, [session, org, user, reload]);
 
 
@@ -93,6 +99,7 @@ export default function Person() {
                         : <button className="btn" onClick={() => setEditor({ kind: 'clockin' })}>{tx("Clock in")}</button>)}
                     {!user.joined && session && org && (
                         <button className="btn" onClick={async () => {
+                            if (!user.email) { toast(tx("Add their email first, then send the invitation.")); setEditor(text('email', tx('Email'), '', 'email')); return; }
                             try { const r = await team.sendInvite(session.email, user.email, org.organization_id); toast(r.message ?? tx("Invite sent")); }
                             catch (e) { toast(e instanceof ApiError ? e.message : tx("Could not send the invite"), 'error'); }
                         }}>{tx("Send invite")}</button>
@@ -128,7 +135,7 @@ export default function Person() {
                     <div className="eyebrow">{tx("Identity")}</div>
                     {sealed && <p className="muted small pad">{self ? tx("Your name, email and phone are edited in the app under Settings → Edit Profile.") : tx("This person has activated their account and manages their own name, email, phone and address in the app.")}</p>}
                     <Row label={tx("Full name")} value={user.full_name} locked={sealed} onClick={() => setEditor(text('full_name', tx('Full name'), user.full_name))} />
-                    <Row label={tx("Email")} value={user.email} locked={sealed} onClick={() => setEditor(text('email', tx('Email'), user.email, 'email'))} />
+                    <Row label={tx("Email")} value={user.email} placeholder={tx("No email yet")} locked={sealed} onClick={() => setEditor(text('email', tx('Email'), user.email, 'email'))} />
                     <Row label={tx("Phone")} value={user.phone_number} locked={sealed} onClick={() => setEditor(text('phone_number', tx('Phone'), user.phone_number))} />
                     <Row label={tx("Address")} value={address} locked={sealed} onClick={() => setEditor(text('street', tx('Street'), user.street))} />
                     <Row label={tx("Date of birth")} value={dateOnly(user.dob)} locked={sealed} onClick={() => setEditor(text('dob', tx('Date of birth'), user.dob?.slice(0, 10), 'date'))} />
@@ -177,6 +184,14 @@ export default function Person() {
             {editor?.kind === 'member' && <MemberActionDialog user={user} action={editor.action} onClose={() => setEditor(null)}
                 onDone={msg => { const gone = editor.action === 'delete'; setEditor(null); toast(msg); if (gone) navigate('/team'); else reload(); }} />}
             {editor?.kind === 'text' && <TextDialog ed={editor} onClose={() => setEditor(null)} onSave={save} />}
+            {editor?.kind === 'link' && session && org && (
+                <LinkAccountDialog name={user.full_name} email={editor.email} onClose={() => setEditor(null)}
+                    onSend={async () => {
+                        await team.sendInvite(session.email, editor.email, org.organization_id, user.id);
+                        setEditor(null);
+                        toast(tx('Invitation sent to {0}. This record becomes theirs when they accept.', editor.email));
+                    }} />
+            )}
             {editor?.kind === 'status' && (
                 <ChoiceDialog title={tx("Status")} options={[['active', tx("Active")], ['inactive', tx("Inactive")], ['terminated', tx("Terminated")]]} current={user.status} onClose={() => setEditor(null)} onPick={v => save('status', v)} />
             )}
@@ -215,6 +230,24 @@ function TextDialog({ ed, onClose, onSave }: { ed: Extract<Editor, { kind: 'text
                     ? <textarea rows={4} value={v} onChange={e => setV(e.target.value)} />
                     : <input type={ed.type ?? 'text'} value={v} onChange={e => setV(e.target.value)} autoFocus />}
             </label>
+        </Dialog>
+    );
+}
+
+// "This email already has an account": the worker signed up on their own. Sending the
+// invitation FOR this record hands it to their account when they accept.
+function LinkAccountDialog({ name, email, onClose, onSend }: { name: string; email: string; onClose: () => void; onSend: () => Promise<void> }) {
+    const [sending, setSending] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    return (
+        <Dialog title={tx("This email already has an account")} onClose={onClose}
+            footer={<SaveFooter onCancel={onClose} saving={sending} label={tx("Send invitation")} onSave={async () => {
+                setSending(true); setError(null);
+                try { await onSend(); } catch (e) { setError(e instanceof ApiError ? e.message : tx("Could not send the invite")); setSending(false); }
+            }} />}>
+            <p>{tx("{0} is already signed up to ClockInOut — most likely {1} created an account before being connected to your team.", email, name || tx("this person"))}</p>
+            <p className="muted">{tx("Send an invitation for this record. When they accept it in the app, their account takes the record over, with the hours and pay you have entered. Nothing is lost, and no second person appears on your team.")}</p>
+            {error && <p className="error-line">{error}</p>}
         </Dialog>
     );
 }

@@ -786,7 +786,20 @@
     "— the CRA formula on this gross": "— формула CRA для цієї суми брутто",
     "— under 18, over 70, or a CPT30 election on file": "— до 18, понад 70 років або подано форму CPT30",
     "‹ Team": "‹ Команда",
-    "→ expected": "→ очікується"
+    "→ expected": "→ очікується",
+    "Email (optional)": "Електронна пошта (необов’язково)",
+    "No email yet? Leave it empty and add it later. They can sign in once you have added their email and sent the invitation.": "Ще не знаєте адресу? Залиште поле порожнім і додайте її пізніше. Людина зможе увійти, щойно ви додасте адресу й надішлете запрошення.",
+    "This email already belongs to a ClockInOut account.": "Ця адреса вже належить обліковому запису ClockInOut.",
+    "They join by invitation: when they accept, they appear on your team with their own account. You can set their rate and other details right after.": "Людина приєднується за запрошенням: щойно вона його прийме, з’явиться у вашій команді зі своїм обліковим записом. Ставку та інші дані можна вказати одразу після цього.",
+    "Send invitation": "Надіслати запрошення",
+    "Invitation sent to {0}.": "Запрошення надіслано на {0}.",
+    "No email yet": "Адреси ще немає",
+    "Add their email first, then send the invitation.": "Спочатку додайте адресу електронної пошти, а потім надішліть запрошення.",
+    "This email already has an account": "Ця адреса вже має обліковий запис",
+    "{0} is already signed up to ClockInOut — most likely {1} created an account before being connected to your team.": "{0} вже зареєстровано в ClockInOut — найімовірніше, {1} створив(-ла) обліковий запис ще до під’єднання до вашої команди.",
+    "this person": "ця людина",
+    "Send an invitation for this record. When they accept it in the app, their account takes the record over, with the hours and pay you have entered. Nothing is lost, and no second person appears on your team.": "Надішліть запрошення для цього запису. Коли людина прийме його в застосунку, її обліковий запис отримає цей запис разом із годинами та виплатами, які ви внесли. Нічого не втрачається, і другої людини у вашій команді не з’являється.",
+    "Invitation sent to {0}. This record becomes theirs when they accept.": "Запрошення надіслано на {0}. Цей запис стане її, щойно людина його прийме."
   },
   "plurals": {
     "Added {n} shifts to {0}": {

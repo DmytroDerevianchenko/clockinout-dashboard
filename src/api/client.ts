@@ -9,6 +9,8 @@
 // the same rule the phones follow with their Ktor client.
 // ============================================================
 
+import { lang } from '../i18n';
+
 export const API_BASE: string =
     (import.meta.env.VITE_API_BASE as string | undefined) ?? 'https://clock-in-out-app.onrender.com';
 
@@ -37,7 +39,9 @@ export const SESSION_LOST = 'clockinout:session-lost';
 type Method = 'GET' | 'POST' | 'PUT' | 'DELETE';
 
 export async function api<T = unknown>(path: string, body?: unknown, method: Method = body === undefined ? 'GET' : 'POST'): Promise<T> {
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    // Accept-Language: the server answers its refusals in the language the
+    // dashboard is showing (its own dictionaries; English when it has none).
+    const headers: Record<string, string> = { 'Content-Type': 'application/json', 'Accept-Language': lang() };
     const token = getToken();
     if (token) headers.Authorization = `Bearer ${token}`;
 

@@ -70,8 +70,11 @@ export const team = {
         street?: string | null; city?: string | null; state?: string | null; postalCode?: string | null; country?: string | null;
     }) => api('/create-user', body),
 
-    sendInvite: (senderEmail: string, inviteEmail: string, organizationId: number) =>
-        api<{ status: string; message?: string }>('/send-invite', { email: senderEmail, inviteEmail, organizationId }),
+    // staffUserId: the invitation is FOR that team record — when the person accepts,
+    // their own account takes the record over (hours, pay), instead of a second
+    // person appearing on the team.
+    sendInvite: (senderEmail: string, inviteEmail: string, organizationId: number, staffUserId?: number) =>
+        api<{ status: string; message?: string }>('/send-invite', { email: senderEmail, inviteEmail, organizationId, ...(staffUserId ? { staffUserId } : {}) }),
 
     // ── Balances: what the org owes each person (net − paid + adjustments), all time ──
     owed: (userId: number, organizationId: number) =>
