@@ -799,7 +799,58 @@
     "{0} is already signed up to ClockInOut — most likely {1} created an account before being connected to your team.": "{0} ya está registrado en ClockInOut; lo más probable es que {1} haya creado una cuenta antes de estar conectado a tu equipo.",
     "this person": "esta persona",
     "Send an invitation for this record. When they accept it in the app, their account takes the record over, with the hours and pay you have entered. Nothing is lost, and no second person appears on your team.": "Envía una invitación para este registro. Cuando la acepte en la aplicación, su cuenta se quedará con el registro, con las horas y los pagos que has introducido. No se pierde nada y no aparece una segunda persona en tu equipo.",
-    "Invitation sent to {0}. This record becomes theirs when they accept.": "Invitación enviada a {0}. Este registro será suyo cuando la acepte."
+    "Invitation sent to {0}. This record becomes theirs when they accept.": "Invitación enviada a {0}. Este registro será suyo cuando la acepte.",
+    "CRA remittance": "Remesa a la CRA",
+    "CRA remittance {0}": "Remesa a la CRA {0}",
+    "This pay adds {0} to the CRA remittance for {1}": "Este pago añade {0} a la remesa a la CRA de {1}",
+    "due {0}": "vence el {0}",
+    "Income tax {0} · CPP {1} + {2} · EI {3} + {4}": "Impuesto {0} · CPP {1} + {2} · EI {3} + {4}",
+    "(employee + employer)": "(empleado + empleador)",
+    "See the month": "Ver el mes",
+    "Could not load the remittances": "No se pudieron cargar las remesas",
+    "Only the employer and admins see the CRA remittance.": "Solo el empleador y los administradores ven la remesa a la CRA.",
+    "Back to Payroll": "Volver a Nómina",
+    "Copied {0}": "Copiado: {0}",
+    "Could not copy — select the number instead": "No se pudo copiar: selecciona el número",
+    "‹ Payroll": "‹ Nómina",
+    "You remit": "Remites",
+    "Every month (regular)": "Cada mes (regular)",
+    "Every quarter": "Cada trimestre",
+    "Next to pay — {0}": "Próximo pago: {0}",
+    "Due {0}": "Vence el {0}",
+    "{0} so far": "{0} hasta ahora",
+    "Held back from pay {0} · your share {1}": "Retenido del pago {0} · tu parte {1}",
+    "Payroll has not been run for some pays yet": "Aún no se ha calculado la nómina de algunos pagos",
+    "Remit": "A remitir",
+    "Still filling": "En curso",
+    "Nothing to remit in {0}: no payroll with deductions has been calculated.": "Nada que remitir en {0}: no se ha calculado ninguna nómina con deducciones.",
+    "{0} in total": "{0} en total",
+    "At the end of the year these totals are what your T4 Summary reports.": "Al final del año, estos totales son los que declara tu T4 Summary.",
+    "Counted: income tax, CPP and EI from the payroll you have calculated, in the month each pay period is paid. Your share is CPP matched one for one and EI × {0}.": "Se cuenta: impuesto, CPP y EI de la nómina que has calculado, en el mes en que se paga cada período. Tu parte es el CPP igualado uno a uno y el EI × {0}.",
+    "Not counted: contractors, casual workers paid without deductions, WSIB and Employer Health Tax.": "No se cuenta: contratistas, trabajadores ocasionales pagados sin deducciones, WSIB ni el Employer Health Tax.",
+    "The CRA must receive the payment by the due date. Check the amount against your own records before you pay.": "La CRA debe recibir el pago antes de la fecha límite. Comprueba el importe con tus propios registros antes de pagar.",
+    "Due today": "Vence hoy",
+    "Due date has passed": "La fecha límite ya pasó",
+    "This period is not over: pays still to come will be added.": "Este período no ha terminado: se añadirán los pagos que falten.",
+    "Not final — payroll has not been run yet for:": "No es definitivo: aún no se ha calculado la nómina de:",
+    "What the CRA form asks for": "Lo que pide el formulario de la CRA",
+    "Amount paid": "Importe pagado",
+    "Gross payroll": "Nómina bruta",
+    "Copy": "Copiar",
+    "Number of employees in the last pay period": "Número de empleados en el último período de pago",
+    "Gross payroll is for the last month of the quarter only — the CRA's rule.": "La nómina bruta es solo la del último mes del trimestre: regla de la CRA.",
+    "Gross payroll is everything paid in the month before any deductions.": "La nómina bruta es todo lo pagado en el mes antes de deducciones.",
+    "Employees: the people paid on {0}.": "Empleados: las personas pagadas el {0}.",
+    "How it adds up": "Cómo se compone",
+    "Pays in this period": "Pagos de este período",
+    "Pay date": "Fecha de pago",
+    "Held back from pay": "Retenido del pago",
+    "Your share": "Tu parte",
+    "To the CRA": "A la CRA",
+    "Tax {0} · CPP {1} + {2} · EI {3} + {4}": "Impuesto {0} · CPP {1} + {2} · EI {3} + {4}",
+    "Employer": "Empleador",
+    "CPP2": "CPP2",
+    "Q{0} {1}": "T{0} {1}"
   },
   "plurals": {
     "Added {n} shifts to {0}": {
@@ -916,6 +967,18 @@
       "one": "{n} período aún no tenía nómina y se omitió",
       "other": "{n} períodos aún no tenían nómina y se omitieron",
       "many": "{n} períodos aún no tenían nómina y se omitieron"
+    },
+    "{n} pays": {
+      "one": "{n} pago",
+      "other": "{n} pagos"
+    },
+    "in {n} days": {
+      "one": "en {n} día",
+      "other": "en {n} días"
+    },
+    "{n} people with hours": {
+      "one": "{n} persona con horas",
+      "other": "{n} personas con horas"
     }
   }
 }

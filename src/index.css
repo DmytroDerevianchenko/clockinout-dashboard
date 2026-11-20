@@ -526,3 +526,15 @@ button.stat-link { display: flex; flex-direction: column; align-items: flex-star
 .caution-card { margin-top: 12px; border-color: var(--caution-ink, currentColor); display: grid; gap: 8px; justify-items: start; }
 .caution-card p { margin: 0; }
 .field small { display: block; margin-top: 4px; }
+
+/* CRA remittance: the line under a pay period, and the Remittances page. */
+.remit-line { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 12px 16px; border-top: 1px solid var(--line); background: var(--surface-2); border-radius: 0 0 var(--radius, 12px) var(--radius, 12px); }
+.remit-body { padding: 4px 16px 16px; }
+.remit-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin: 8px 0 12px; align-items: start; }
+.remit-ask { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.remit-ask strong { font-size: 16px; }
+.remit-table td:not(:first-child), .remit-table th:not(:first-child) { text-align: right; }
+.remit-table .remit-total td { border-top: 2px solid var(--line); }
+.remit-person td { color: var(--ink-muted); padding-top: 6px; padding-bottom: 6px; }
+.remit-person td:first-child { padding-left: 24px; }
+.remit-note { margin-top: 16px; max-width: 900px; }

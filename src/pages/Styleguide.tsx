@@ -8,6 +8,25 @@ import Dialog, { SaveFooter } from '../components/Dialog';
 import ThemeSwitch from '../components/ThemeSwitch';
 import LangSwitch from '../components/LangSwitch';
 import { PlanCardView } from '../components/PlanCard';
+import { PeriodBody } from './Remittances';
+import type { RemitPeriod } from '../api/payroll';
+
+// Sample month for the CRA remittance preview (two pays, two people on the first).
+const A = (gross: number, tax: number, cpp: number, ei: number) => {
+    const eiEmployer = Math.round(ei * 140) / 100, employeeTotal = Math.round((tax + cpp + ei) * 100) / 100, employerTotal = Math.round((cpp + eiEmployer) * 100) / 100;
+    return { gross, tax, cppEmployee: cpp, cppEmployer: cpp, cpp2Employee: 0, cpp2Employer: 0, eiEmployee: ei, eiEmployer, employeeTotal, employerTotal, total: Math.round((employeeTotal + employerTotal) * 100) / 100 };
+};
+const SAMPLE_REMIT: RemitPeriod = {
+    key: '2026-11', year: 2026, month: 11, quarter: null, from: '2026-11-01', to: '2026-11-30', dueDate: '2026-12-15', isOpen: false,
+    ...A(5080, 598.72, 278.23, 82.8), grossPayroll: 5080, employeesInLastPay: 1, lastPayDate: '2026-11-20',
+    notRunYet: [{ payPeriodId: 9, startDate: '2026-11-16', endDate: '2026-11-29', payDate: '2026-12-04', people: 2 }],
+    payPeriods: [
+        { payPeriodId: 1, startDate: '2026-10-19', endDate: '2026-11-01', payDate: '2026-11-06', ...A(3040, 336.86, 164.86, 49.55),
+          people: [{ userId: 1, fullName: 'Alex Rivera', ...A(2040, 261.86, 113.37, 33.25) }, { userId: 2, fullName: 'Sam Okafor', ...A(1000, 75, 51.49, 16.3) }] },
+        { payPeriodId: 2, startDate: '2026-11-02', endDate: '2026-11-15', payDate: '2026-11-20', ...A(2040, 261.86, 113.37, 33.25),
+          people: [{ userId: 1, fullName: 'Alex Rivera', ...A(2040, 261.86, 113.37, 33.25) }] },
+    ],
+};
 import RowMenu from '../components/Menu';
 import AddressSearch, { type FoundAddress } from '../components/AddressSearch';
 import MapView from '../components/MapView';
@@ -66,6 +85,22 @@ export default function Styleguide() {
                     ))}
                 </div>
                 <div className="chips" style={{ marginBottom: 14 }}><button className="chip on">Mon 16</button><button className="chip on">Tue 17</button><button className="chip">Sat 21</button><button className="chip on">Alex Rivera</button><button className="chip">Open slot</button></div>
+
+                {/* ── CRA remittance: one month, open ── */}
+                <div className="card card-flush period open" style={{ marginBottom: 14 }}>
+                    <button className="period-head">
+                        <div><strong>November 2026</strong><div className="faint small">Due Dec 15, 2026 · 2 pays</div></div>
+                        <div className="period-right"><div className="period-sums"><span><em>Remit</em>$1,353.90</span></div><span className="pill caution">in 25 days</span><span className="period-chev" aria-hidden="true">›</span></div>
+                    </button>
+                    <PeriodBody p={SAMPLE_REMIT} copy={() => {}} />
+                </div>
+                <div className="card card-flush period open" style={{ marginBottom: 14 }}>
+                    <div className="remit-line">
+                        <div><strong>This pay adds $568.40 to the CRA remittance for November 2026</strong><span className="faint small"> · due Dec 15, 2026</span>
+                            <div className="faint small">Income tax $261.86 · CPP $113.37 + $113.37 · EI $33.25 + $46.55 <span className="faint">(employee + employer)</span></div></div>
+                        <button className="btn btn-sm">See the month</button>
+                    </div>
+                </div>
 
                 {/* ── Maps ── */}
                 <div className="groups"><PlanCardView saving={false} onGotIt={() => {}} b={{ mode: 'shadow', status: 'early_access', plan: 'free', isAdmin: true, acknowledgedAt: null, organizations: 2, rule: { freePeople: 5, pricePerExtraPerson: 5, currency: 'CAD', noticeDays: 60 }, thisMonth: { month: '2026-11', peopleWorked: 10, accountPeople: 12, billablePeople: 7, amount: 35 }, lastMonth: { month: '2026-10', peopleWorked: 4, accountPeople: 4, billablePeople: 0, amount: 0 } }} /></div>

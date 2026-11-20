@@ -3,7 +3,7 @@
 // (payroll.service calcUserPeriod), the same rows the phones read.
 // ============================================================
 import { api, apiGet } from './client';
-import { lang, hoursText } from '../i18n';
+import { lang, hoursText, tx } from '../i18n';
 
 export type PayrollHoliday = { date: string; name: string; hoursWorked: number; holidayPay: number; premium: number; eligible?: boolean; reason?: string | null };
 export type CustomDeduction = { name: string; amount: number };
@@ -58,6 +58,30 @@ export const payroll = {
     // The pay day rule: the crew is paid this many days after a period ends.
     setPayDay: (organizationId: number, offsetDays: number) =>
         api<{ status: string; offsetDays: number; periodsUpdated: number }>('/set-pay-day', { organizationId, offsetDays }),
+
+    // What the employer sends to the CRA, by month (or quarter) of the pay date.
+    remittances: (organizationId: number, year?: number) =>
+        apiGet<RemittancesReply>('/remittances', { organizationId, year }),
+    setRemitterType: (organizationId: number, remitterType: 'monthly' | 'quarterly') =>
+        api<{ status: string; remitterType: string }>('/set-remitter-type', { organizationId, remitterType }),
+};
+
+// ── CRA remittance (GET /remittances) ──
+// Amounts are dollars. employeeTotal = held back from pay (tax + CPP + EI);
+// employerTotal = the employer's own share; total = what goes to the CRA.
+export type RemitAmounts = {
+    gross: number; tax: number; cppEmployee: number; cppEmployer: number; cpp2Employee: number; cpp2Employer: number;
+    eiEmployee: number; eiEmployer: number; employeeTotal: number; employerTotal: number; total: number;
+};
+export type RemitPay = RemitAmounts & { payPeriodId: number; startDate: string; endDate: string; payDate: string; people: (RemitAmounts & { userId: number; fullName: string })[] };
+export type RemitPending = { payPeriodId: number; startDate: string; endDate: string; payDate: string; people: number };
+export type RemitPeriod = RemitAmounts & {
+    key: string; year: number; month: number | null; quarter: number | null; from: string; to: string; dueDate: string; isOpen: boolean;
+    grossPayroll: number; employeesInLastPay: number; lastPayDate: string; payPeriods: RemitPay[]; notRunYet: RemitPending[];
+};
+export type RemittancesReply = {
+    status: string; year: number; availableYears: number[]; remitterType: 'monthly' | 'quarterly'; eiEmployerFactor: number; today: string;
+    periods: RemitPeriod[]; notRunYet: (RemitPending & { key: string; dueDate: string })[]; yearTotals: RemitAmounts;
 };
 
 export const n = (v: unknown): number => (v == null || v === '' ? 0 : Number(v));
@@ -69,3 +93,13 @@ export const periodLabel = (p: { start_date: string; end_date: string }) => {
     const f = (iso: string) => new Date(iso).toLocaleDateString(lang(), { month: 'short', day: 'numeric', timeZone: 'America/Toronto' });
     return `${f(p.start_date)} – ${f(p.end_date)}`;
 };
+
+/** "November 2026" for a month, "Q4 2026" for a quarter. */
+export const remitTitle = (p: { from: string; year: number; quarter: number | null }) => {
+    if (p.quarter) return tx('Q{0} {1}', p.quarter, p.year);
+    const s = new Date(p.from + 'T12:00:00').toLocaleDateString(lang(), { month: 'long', year: 'numeric' });
+    return s.charAt(0).toUpperCase() + s.slice(1);
+};
+/** Whole days from one calendar date ('YYYY-MM-DD') to another. */
+export const daysBetween = (from: string, to: string) =>
+    Math.round((Date.parse(to + 'T12:00:00Z') - Date.parse(from + 'T12:00:00Z')) / 86400000);

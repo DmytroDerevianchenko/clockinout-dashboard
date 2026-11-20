@@ -5,7 +5,7 @@
 // Editing (Edit Payroll, record a payment, configuration) is the next slice.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ApiError } from '../api/client';
-import { payroll, type PayPeriod, type UserBalance, money, hours, periodLabel, payDateLabel, n } from '../api/payroll';
+import { payroll, type PayPeriod, type UserBalance, type RemitPay, type RemitPeriod, money, hours, periodLabel, payDateLabel, remitTitle, n } from '../api/payroll';
 import { team, type RosterUser } from '../api/team';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth';
@@ -22,8 +22,10 @@ import { tx, txn, perHour } from '../i18n';
 type Names = Map<number, RosterUser>;
 
 export default function Payroll() {
-    const { session, org } = useAuth();
+    const { session, org, canManage } = useAuth();
     const thisYear = new Date().getFullYear();
+    // What each pay adds to the CRA remittance (employer/admin only): pay period id → its pay + the month it lands in.
+    const [remit, setRemit] = useState<Map<number, { pay: RemitPay; period: RemitPeriod }>>(new Map());
     const [year, setYear] = useState(thisYear);
     const [data, setData] = useState<{ periods: PayPeriod[]; years: number[]; earned: number; paid: number } | null>(null);
     const [names, setNames] = useState<Names>(new Map());
@@ -69,8 +71,17 @@ export default function Payroll() {
                 return np && nb ? { period: np, b: nb } : d;
             });
         }).catch(e => { if (!cancelled) setError(e instanceof ApiError ? e.message : tx("Could not load payroll")); });
+        // Beside the list, never in its way: the page works the same if this fails.
+        if (canManage) {
+            payroll.remittances(org.organization_id, year).then(r => {
+                if (cancelled) return;
+                const m = new Map<number, { pay: RemitPay; period: RemitPeriod }>();
+                for (const period of r.periods) for (const pay of period.payPeriods) m.set(pay.payPeriodId, { pay, period });
+                setRemit(m);
+            }).catch(() => { if (!cancelled) setRemit(new Map()); });
+        }
         return () => { cancelled = true; };
-    }, [session, org, year, thisYear, tick]);
+    }, [session, org, year, thisYear, tick, canManage]);
 
     const totals = useMemo(() => {
         const t = new Map<number, { hours: number; gross: number; net: number; paid: number; people: number }>();
@@ -116,6 +127,7 @@ export default function Payroll() {
                 </label>
                 <div className="muted small">{tx("Earned this year")} {money(data.earned)} {tx("· paid")} {money(data.paid)}</div>
                 <span className="spacer" />
+                {canManage && <button className="btn" onClick={() => navigate('/payroll/remittances')}>{tx("CRA remittance")}</button>}
                 <button className="btn" onClick={() => setStubsFor({})}>{tx("Paystubs")}</button>
                 <button className="btn" onClick={() => setStats(true)}>{tx("Statistics")}</button>
                 <button className="btn" onClick={() => setConfig(true)}>{tx("Configuration")}</button>
@@ -129,6 +141,7 @@ export default function Payroll() {
                     const rows = (p.userBalances ?? []).filter(b => n(b.totalHours) > 0 || b.hasPayrollRun || n(b.totalPaid) > 0)
                         .sort((a, b) => (names.get(a.userId)?.full_name ?? '').localeCompare(names.get(b.userId)?.full_name ?? ''));
                     const outstanding = t.net - t.paid;
+                    const rm = remit.get(p.id);
                     return (
                         <div key={p.id} className={'card card-flush period' + (isOpen ? ' open' : '')}>
                             <button className="period-head" onClick={() => setOpen(isOpen ? null : p.id)}>
@@ -137,6 +150,7 @@ export default function Payroll() {
                                     <div className="faint small">{txn(t.people, '{n} person', '{n} people')} · {hours(t.hours)}{p.status !== 'open' ? ` · ${p.status}` : ''}</div>
                                     {/* The pay date decides the YEAR a period counts in; say so when it is not the year on screen. */}
                                     {p.pay_date && <div className="faint small">{tx('Pay date {0}', payDateLabel(p.pay_date))}{Number(p.pay_date.slice(0, 4)) !== year ? <span className="caution"> · {tx('counts in {0}', p.pay_date.slice(0, 4))}</span> : null}</div>}
+                                    {rm && rm.pay.total > 0.004 && <div className="faint small">{tx('CRA remittance {0}', money(rm.pay.total))}</div>}
                                 </div>
                                 <div className="period-right">
                                     <div className="period-sums">
@@ -194,6 +208,17 @@ export default function Payroll() {
                                         </tbody>
                                     </table>
                                 )
+                            )}
+                            {/* What this pay adds to the month's CRA remittance — the employer's side of the same payroll. */}
+                            {isOpen && rm && rm.pay.total > 0.004 && (
+                                <div className="remit-line">
+                                    <div>
+                                        <strong>{tx('This pay adds {0} to the CRA remittance for {1}', money(rm.pay.total), remitTitle(rm.period))}</strong>
+                                        <span className="faint small"> · {tx('due {0}', payDateLabel(rm.period.dueDate))}</span>
+                                        <div className="faint small">{tx('Income tax {0} · CPP {1} + {2} · EI {3} + {4}', money(rm.pay.tax), money(rm.pay.cppEmployee + rm.pay.cpp2Employee), money(rm.pay.cppEmployer + rm.pay.cpp2Employer), money(rm.pay.eiEmployee), money(rm.pay.eiEmployer))} <span className="faint">{tx("(employee + employer)")}</span></div>
+                                    </div>
+                                    <button className="btn btn-sm" onClick={() => navigate('/payroll/remittances')}>{tx("See the month")}</button>
+                                </div>
                             )}
                         </div>
                     );

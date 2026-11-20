@@ -799,7 +799,58 @@
     "{0} is already signed up to ClockInOut — most likely {1} created an account before being connected to your team.": "{0} est déjà inscrit à ClockInOut : {1} a très probablement créé un compte avant d’être relié à votre équipe.",
     "this person": "cette personne",
     "Send an invitation for this record. When they accept it in the app, their account takes the record over, with the hours and pay you have entered. Nothing is lost, and no second person appears on your team.": "Envoyez une invitation pour cette fiche. Lorsque la personne l’accepte dans l’application, son compte reprend la fiche, avec les heures et la paie que vous avez saisies. Rien n’est perdu, et aucune deuxième personne n’apparaît dans votre équipe.",
-    "Invitation sent to {0}. This record becomes theirs when they accept.": "Invitation envoyée à {0}. Cette fiche sera la sienne dès son acceptation."
+    "Invitation sent to {0}. This record becomes theirs when they accept.": "Invitation envoyée à {0}. Cette fiche sera la sienne dès son acceptation.",
+    "CRA remittance": "Versement à l’ARC",
+    "CRA remittance {0}": "Versement à l’ARC {0}",
+    "This pay adds {0} to the CRA remittance for {1}": "Cette paie ajoute {0} au versement à l’ARC de {1}",
+    "due {0}": "échéance le {0}",
+    "Income tax {0} · CPP {1} + {2} · EI {3} + {4}": "Impôt {0} · RPC {1} + {2} · AE {3} + {4}",
+    "(employee + employer)": "(employé + employeur)",
+    "See the month": "Voir le mois",
+    "Could not load the remittances": "Impossible de charger les versements",
+    "Only the employer and admins see the CRA remittance.": "Seuls l’employeur et les administrateurs voient le versement à l’ARC.",
+    "Back to Payroll": "Retour à la paie",
+    "Copied {0}": "Copié : {0}",
+    "Could not copy — select the number instead": "Copie impossible : sélectionnez plutôt le nombre",
+    "‹ Payroll": "‹ Paie",
+    "You remit": "Vous versez",
+    "Every month (regular)": "Chaque mois (régulier)",
+    "Every quarter": "Chaque trimestre",
+    "Next to pay — {0}": "Prochain versement — {0}",
+    "Due {0}": "Échéance : {0}",
+    "{0} so far": "{0} à ce jour",
+    "Held back from pay {0} · your share {1}": "Retenu sur la paie {0} · votre part {1}",
+    "Payroll has not been run for some pays yet": "La paie n’a pas encore été calculée pour certaines périodes",
+    "Remit": "À verser",
+    "Still filling": "En cours",
+    "Nothing to remit in {0}: no payroll with deductions has been calculated.": "Rien à verser en {0} : aucune paie avec retenues n’a été calculée.",
+    "{0} in total": "{0} au total",
+    "At the end of the year these totals are what your T4 Summary reports.": "À la fin de l’année, ces totaux sont ceux que déclare votre T4 Sommaire.",
+    "Counted: income tax, CPP and EI from the payroll you have calculated, in the month each pay period is paid. Your share is CPP matched one for one and EI × {0}.": "Compris : impôt, RPC et AE de la paie que vous avez calculée, dans le mois où chaque période est payée. Votre part : le RPC à parts égales et l’AE × {0}.",
+    "Not counted: contractors, casual workers paid without deductions, WSIB and Employer Health Tax.": "Non compris : sous-traitants, travailleurs occasionnels payés sans retenues, CSPAAT et impôt-santé des employeurs.",
+    "The CRA must receive the payment by the due date. Check the amount against your own records before you pay.": "L’ARC doit recevoir le paiement au plus tard à l’échéance. Vérifiez le montant avec vos propres registres avant de payer.",
+    "Due today": "Échéance aujourd’hui",
+    "Due date has passed": "Échéance dépassée",
+    "This period is not over: pays still to come will be added.": "Cette période n’est pas terminée : les paies à venir s’y ajouteront.",
+    "Not final — payroll has not been run yet for:": "Non définitif — la paie n’a pas encore été calculée pour :",
+    "What the CRA form asks for": "Ce que demande le formulaire de l’ARC",
+    "Amount paid": "Montant payé",
+    "Gross payroll": "Paie brute",
+    "Copy": "Copier",
+    "Number of employees in the last pay period": "Nombre d’employés à la dernière période de paie",
+    "Gross payroll is for the last month of the quarter only — the CRA's rule.": "La paie brute est celle du dernier mois du trimestre seulement — règle de l’ARC.",
+    "Gross payroll is everything paid in the month before any deductions.": "La paie brute est tout ce qui a été payé dans le mois avant retenues.",
+    "Employees: the people paid on {0}.": "Employés : les personnes payées le {0}.",
+    "How it adds up": "Le détail du calcul",
+    "Pays in this period": "Paies de cette période",
+    "Pay date": "Date de paie",
+    "Held back from pay": "Retenu sur la paie",
+    "Your share": "Votre part",
+    "To the CRA": "À l’ARC",
+    "Tax {0} · CPP {1} + {2} · EI {3} + {4}": "Impôt {0} · RPC {1} + {2} · AE {3} + {4}",
+    "Employer": "Employeur",
+    "CPP2": "RPC2",
+    "Q{0} {1}": "T{0} {1}"
   },
   "plurals": {
     "Added {n} shifts to {0}": {
@@ -916,6 +967,18 @@
       "one": "{n} période sans paie calculée a été omise",
       "other": "{n} périodes sans paie calculée ont été omises",
       "many": "{n} périodes sans paie calculée ont été omises"
+    },
+    "{n} pays": {
+      "one": "{n} paie",
+      "other": "{n} paies"
+    },
+    "in {n} days": {
+      "one": "dans {n} jour",
+      "other": "dans {n} jours"
+    },
+    "{n} people with hours": {
+      "one": "{n} personne avec des heures",
+      "other": "{n} personnes avec des heures"
     }
   }
 }
