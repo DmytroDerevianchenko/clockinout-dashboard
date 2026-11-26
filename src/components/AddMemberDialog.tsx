@@ -80,7 +80,7 @@ export default function AddMemberDialog({ onClose, onDone }: { onClose: () => vo
     }
 
     return (
-        <Dialog title={tx("Add a team member")} subtitle={tx("They appear on the roster right away; the invite lets them sign in to the app.")} onClose={onClose} wide
+        <Dialog title={tx("Add a team member")} subtitle={tx("They appear on the roster right away. To clock in on their own phone they create their own account with this email (you don’t give them a password) and accept your invitation; the email explains the steps.")} onClose={onClose} wide
             footer={<SaveFooter onCancel={onClose} onSave={save} saving={saving} label={tx("Add")} disabled={!f.fullName.trim() || hasAccount} />}>
             <div className="grid-2">
                 <label className="field"><span>{tx("Full name")}</span><input value={f.fullName} onChange={set('fullName')} /></label>

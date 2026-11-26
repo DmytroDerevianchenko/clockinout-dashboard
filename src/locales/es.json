@@ -857,7 +857,8 @@
     "If you send it on a later day, it moves to that day.": "Si la envías otro día, pasa a ser ese día.",
     "Issue date + {0} days (the client’s terms).": "Fecha de emisión + {0} días (las condiciones del cliente).",
     "Optional. Printed on the invoice under “Payment terms”. Press → to use the suggestion; leave it blank to print nothing.": "Opcional. Se imprime en la factura bajo «Payment terms». Pulsa → para usar la sugerencia; déjalo en blanco para no imprimir nada.",
-    "Payable within {0} days by e-transfer.": "Pagadero en {0} días por transferencia electrónica."
+    "Payable within {0} days by e-transfer.": "Pagadero en {0} días por transferencia electrónica.",
+    "They appear on the roster right away. To clock in on their own phone they create their own account with this email (you don’t give them a password) and accept your invitation; the email explains the steps.": "Aparece en la lista de inmediato. Para registrar su entrada desde su propio teléfono, crea su propia cuenta con este correo (tú no le das una contraseña) y acepta tu invitación; el correo explica los pasos."
   },
   "plurals": {
     "Added {n} shifts to {0}": {
