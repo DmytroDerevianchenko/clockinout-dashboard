@@ -861,7 +861,18 @@
     "They appear on the roster right away. To clock in on their own phone they create their own account with this email (you don’t give them a password) and accept your invitation; the email explains the steps.": "Людина одразу з’являється у списку. Щоб відмічатися зі свого телефона, вона створює власний обліковий запис із цією адресою (пароль ви їй не даєте) і приймає ваше запрошення; у листі пояснено кроки.",
     "Invoice {0}": "Рахунок {0}",
     "View": "Переглянути",
-    "A paid or cancelled invoice can no longer be changed. Use Duplicate to start a new one from it.": "Оплачений або скасований рахунок більше не можна змінити. Скористайтеся «Дублювати», щоб створити новий на його основі."
+    "A paid or cancelled invoice can no longer be changed. Use Duplicate to start a new one from it.": "Оплачений або скасований рахунок більше не можна змінити. Скористайтеся «Дублювати», щоб створити новий на його основі.",
+    "This dashboard is for employers. Clocking in and out happens in the phone app; an account is also created there.": "Ця панель — для роботодавців. Відмічатися потрібно в застосунку на телефоні; обліковий запис теж створюється там.",
+    "No email · you clock them in": "Без пошти · відмічаєте ви",
+    "No email on file. You clock them in; add an email to let them use the app.": "Пошту не вказано. Відмічаєте ви; додайте адресу, щоб людина могла користуватися застосунком.",
+    "No account yet": "Ще немає облікового запису",
+    "They haven’t created their account yet. Your invitation appears for them when they do.": "Людина ще не створила обліковий запис. Ваше запрошення з’явиться, щойно вона це зробить.",
+    "Invited · no account yet": "Запрошено · ще без облікового запису",
+    "Invited. They haven’t created their account yet.": "Запрошено. Людина ще не створила обліковий запис.",
+    "Waiting for their Accept": "Очікує на прийняття",
+    "They have an account. Your invitation is waiting for their Accept.": "Обліковий запис є. Ваше запрошення чекає, поки людина його прийме.",
+    "Has an account · invite them": "Має обліковий запис · запросіть",
+    "They have an account, but no invitation is waiting (declined or expired). Send it again.": "Обліковий запис є, але запрошення не очікує (відхилене або прострочене). Надішліть ще раз."
   },
   "plurals": {
     "Added {n} shifts to {0}": {

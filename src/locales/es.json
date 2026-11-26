@@ -861,7 +861,18 @@
     "They appear on the roster right away. To clock in on their own phone they create their own account with this email (you don’t give them a password) and accept your invitation; the email explains the steps.": "Aparece en la lista de inmediato. Para registrar su entrada desde su propio teléfono, crea su propia cuenta con este correo (tú no le das una contraseña) y acepta tu invitación; el correo explica los pasos.",
     "Invoice {0}": "Factura {0}",
     "View": "Ver",
-    "A paid or cancelled invoice can no longer be changed. Use Duplicate to start a new one from it.": "Una factura pagada o cancelada ya no se puede modificar. Usa Duplicar para empezar una nueva a partir de ella."
+    "A paid or cancelled invoice can no longer be changed. Use Duplicate to start a new one from it.": "Una factura pagada o cancelada ya no se puede modificar. Usa Duplicar para empezar una nueva a partir de ella.",
+    "This dashboard is for employers. Clocking in and out happens in the phone app; an account is also created there.": "Este panel es para empleadores. La entrada y la salida se registran en la app del teléfono; la cuenta también se crea allí.",
+    "No email · you clock them in": "Sin correo · tú registras su entrada",
+    "No email on file. You clock them in; add an email to let them use the app.": "Sin correo registrado. Tú registras su entrada; añade un correo para que pueda usar la app.",
+    "No account yet": "Aún sin cuenta",
+    "They haven’t created their account yet. Your invitation appears for them when they do.": "Aún no ha creado su cuenta. Tu invitación le aparecerá cuando lo haga.",
+    "Invited · no account yet": "Invitado · aún sin cuenta",
+    "Invited. They haven’t created their account yet.": "Invitado. Aún no ha creado su cuenta.",
+    "Waiting for their Accept": "Esperando que acepte",
+    "They have an account. Your invitation is waiting for their Accept.": "Ya tiene cuenta. Tu invitación espera a que la acepte.",
+    "Has an account · invite them": "Tiene cuenta · invítalo",
+    "They have an account, but no invitation is waiting (declined or expired). Send it again.": "Tiene cuenta, pero no hay ninguna invitación pendiente (rechazada o caducada). Envíala de nuevo."
   },
   "plurals": {
     "Added {n} shifts to {0}": {

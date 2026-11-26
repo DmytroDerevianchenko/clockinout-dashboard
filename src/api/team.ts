@@ -10,6 +10,8 @@ export type ActiveShift = { clockin_id: number; job_id: number; job_name: string
 export type RosterUser = {
     id: number; email: string; full_name: string; role: 'employer' | 'employee' | 'accountant';
     is_admin: boolean; has_password: boolean; organization_id: number;
+    // What "not joined" means: joined | no_email | no_account | invited_no_account | invited | not_invited.
+    join_state?: string;
     start_date: string | null; dob: string | null; taxpayer_id: string | null; verification_code: string | null;
     user_tz: string | null; week_hours: number; current_rate: number | null; salary_amount: number | null;
     notes: string | null; geofence_enabled: boolean | null; geofence_radius: number | null;
@@ -92,6 +94,31 @@ export type Adjustment = { id: number; user_id: number; amount: number; adjusted
 
 // ── display helpers shared by the Team pages ──
 export const money = (v: unknown) => `$${n(v).toLocaleString(lang(), { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+// "Not joined" covered five situations; these say which one, so the employer
+// can see whether anything is theirs to do. Short = the roster pill, long =
+// the sentence in the person's record. (Each sentence is written out in full on purpose: the
+// locale check reads them from the source.)
+export function joinShort(u: { join_state?: string }): string {
+    switch (u.join_state) {
+        case 'no_email': return tx("No email · you clock them in");
+        case 'no_account': return tx("No account yet");
+        case 'invited_no_account': return tx("Invited · no account yet");
+        case 'invited': return tx("Waiting for their Accept");
+        case 'not_invited': return tx("Has an account · invite them");
+        default: return tx("Not joined");
+    }
+}
+export function joinLong(u: { join_state?: string }): string {
+    switch (u.join_state) {
+        case 'no_email': return tx("No email on file. You clock them in; add an email to let them use the app.");
+        case 'no_account': return tx("They haven’t created their account yet. Your invitation appears for them when they do.");
+        case 'invited_no_account': return tx("Invited. They haven’t created their account yet.");
+        case 'invited': return tx("They have an account. Your invitation is waiting for their Accept.");
+        case 'not_invited': return tx("They have an account, but no invitation is waiting (declined or expired). Send it again.");
+        default: return tx("Not joined yet");
+    }
+}
+
 export const dateOnly = (iso: string | null | undefined) => iso ? new Date(iso.slice(0, 10) + 'T12:00:00').toLocaleDateString(lang(), { year: 'numeric', month: 'short', day: 'numeric' }) : '';
 export const dateTime = (iso: string | null | undefined) => iso ? new Date(iso).toLocaleString(lang(), { dateStyle: 'medium', timeStyle: 'short' }) : '';
 export const timeOnly = (iso: string | null | undefined) => iso ? new Date(iso).toLocaleTimeString(lang(), { hour: 'numeric', minute: '2-digit' }) : '';

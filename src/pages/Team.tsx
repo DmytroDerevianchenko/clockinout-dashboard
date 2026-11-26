@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ApiError } from '../api/client';
-import { team, type RosterUser, type RosterReply, type JobEntry, type OwedRow, money, employmentLabel, statusLabel, timeOnly } from '../api/team';
+import { team, type RosterUser, type RosterReply, type JobEntry, type OwedRow, money, employmentLabel, statusLabel, timeOnly, joinShort, joinLong } from '../api/team';
 import { useAuth } from '../auth';
 import { SkeletonTable } from '../components/Skeleton';
 import Dialog, { SaveFooter } from '../components/Dialog';
@@ -103,7 +103,7 @@ export default function Team() {
                                         <Link to={`/team/${u.id}`} className="row-link">
                                             <span className={'dot' + (u.is_clocked_in ? ' live' : '')} />
                                             <strong>{u.full_name}</strong>{self && <span className="pill">{tx("You")}</span>}
-                                            {!u.joined && <span className="pill caution">{tx("Not joined")}</span>}
+                                            {!u.joined && <span className="pill caution" title={joinLong(u)}>{joinShort(u)}</span>}
                                         </Link>
                                         <div className="faint small">
                                             {u.is_clocked_in ? tx("On the clock{0} since {1}", u.current_job_name ? ` · ${u.current_job_name}` : '', timeOnly(u.clock_in_time)) : (u.email || tx("No email yet"))}

@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ApiError } from '../api/client';
-import { team, type RosterUser, money, dateOnly, dateTime, employmentLabel, statusLabel, num, PROVINCES } from '../api/team';
+import { team, type RosterUser, money, dateOnly, dateTime, employmentLabel, statusLabel, num, PROVINCES, joinShort, joinLong } from '../api/team';
 import { useAuth } from '../auth';
 import { SkeletonRecord } from '../components/Skeleton';
 import Dialog, { SaveFooter } from '../components/Dialog';
@@ -89,7 +89,7 @@ export default function Person() {
                 <div className="person-id">
                     <div className={'avatar avatar-lg' + (user.is_clocked_in ? ' live' : '')} aria-hidden="true">{initialsOf(user.full_name || user.email)}</div>
                     <div>
-                    <h2>{user.full_name}{self && <span className="pill">{tx("You")}</span>}{user.role === 'employer' ? <span className="pill">{tx("Owner")}</span> : user.is_admin ? <span className="pill">{tx("Admin")}</span> : null}{!user.joined && <span className="pill caution">{tx("Not joined")}</span>}</h2>
+                    <h2>{user.full_name}{self && <span className="pill">{tx("You")}</span>}{user.role === 'employer' ? <span className="pill">{tx("Owner")}</span> : user.is_admin ? <span className="pill">{tx("Admin")}</span> : null}{!user.joined && <span className="pill caution" title={joinLong(user)}>{joinShort(user)}</span>}</h2>
                     <div className="muted">{employmentLabel(user.employment_type)} · {statusLabel(user.status)}{user.is_clocked_in ? tx(" · On the clock{0}", user.current_job_name ? tx(' at {0}', user.current_job_name) : '') : ''}</div>
                     </div>
                 </div>
@@ -165,7 +165,7 @@ export default function Person() {
                     <Row label={tx("Admin access")} value={user.is_admin ? tx("Yes") : tx("No")} locked={self || user.role === 'employer'}
                         onClick={() => save('is_admin', user.is_admin ? 'false' : 'true')} />
                     <Row label={tx("Registered")} value={dateTime(user.created_at)} />
-                    <Row label={tx("Joined organization")} value={user.joined ? dateTime(user.joined_at) : tx("Not joined yet")} tone={user.joined ? undefined : 'caution'} />
+                    <Row label={tx("Joined organization")} value={user.joined ? dateTime(user.joined_at) : joinLong(user)} tone={user.joined ? undefined : 'caution'} />
                     {!user.joined && user.verification_code && <Row label={tx("Invite code")} value={user.verification_code} />}
                     <Row label={tx("Last active")} value={dateTime(user.org_last_login)} placeholder={tx("Never")} />
                 </section>

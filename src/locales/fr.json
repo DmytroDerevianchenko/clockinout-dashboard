@@ -861,7 +861,18 @@
     "They appear on the roster right away. To clock in on their own phone they create their own account with this email (you don’t give them a password) and accept your invitation; the email explains the steps.": "La personne apparaît tout de suite dans la liste. Pour pointer depuis son propre téléphone, elle crée son propre compte avec cette adresse (vous ne lui donnez pas de mot de passe) et accepte votre invitation ; le courriel explique les étapes.",
     "Invoice {0}": "Facture {0}",
     "View": "Voir",
-    "A paid or cancelled invoice can no longer be changed. Use Duplicate to start a new one from it.": "Une facture payée ou annulée ne peut plus être modifiée. Utilisez Dupliquer pour en créer une nouvelle à partir de celle-ci."
+    "A paid or cancelled invoice can no longer be changed. Use Duplicate to start a new one from it.": "Une facture payée ou annulée ne peut plus être modifiée. Utilisez Dupliquer pour en créer une nouvelle à partir de celle-ci.",
+    "This dashboard is for employers. Clocking in and out happens in the phone app; an account is also created there.": "Ce tableau de bord est destiné aux employeurs. Le pointage se fait dans l’application mobile ; le compte s’y crée aussi.",
+    "No email · you clock them in": "Sans courriel · vous pointez pour lui",
+    "No email on file. You clock them in; add an email to let them use the app.": "Aucun courriel au dossier. Vous pointez pour cette personne ; ajoutez un courriel pour qu’elle puisse utiliser l’application.",
+    "No account yet": "Pas encore de compte",
+    "They haven’t created their account yet. Your invitation appears for them when they do.": "Cette personne n’a pas encore créé son compte. Votre invitation lui apparaîtra à ce moment-là.",
+    "Invited · no account yet": "Invité · pas encore de compte",
+    "Invited. They haven’t created their account yet.": "Invité. Cette personne n’a pas encore créé son compte.",
+    "Waiting for their Accept": "En attente de son acceptation",
+    "They have an account. Your invitation is waiting for their Accept.": "Cette personne a un compte. Votre invitation attend son acceptation.",
+    "Has an account · invite them": "A un compte · invitez-le",
+    "They have an account, but no invitation is waiting (declined or expired). Send it again.": "Cette personne a un compte, mais aucune invitation n’est en attente (refusée ou expirée). Renvoyez-la."
   },
   "plurals": {
     "Added {n} shifts to {0}": {

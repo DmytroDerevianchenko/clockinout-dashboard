@@ -68,6 +68,7 @@ export default function Login() {
                 <div className="brand"><img className="brand-mark" src="/favicon.svg" alt="" /><div className="brand-name">{tx("ClockInOut")}</div></div>
                 <h2>{tx("Sign in")}</h2>
                 <p className="muted">{tx("The same account you use in the app.")}</p>
+                <p className="muted small">{tx("This dashboard is for employers. Clocking in and out happens in the phone app; an account is also created there.")}</p>
                 <label className="field"><span>{tx("Email")}</span>
                     <input type="email" autoComplete="username" value={email} onChange={e => setEmail(e.target.value)} required />
                 </label>
