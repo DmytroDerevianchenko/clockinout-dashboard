@@ -60,7 +60,9 @@ export const orgApi = {
     saveSettings: (organizationId: number, settings: OrgSettings) => api('/settings', { organizationId, settings }),
     invoices: (userId: number, organizationId: number, year?: number, includeDeleted = false) => api<{ status: string; invoices: InvoiceRow[] }>('/invoices/list', { userId, organizationId, year, includeDeleted }),
     invoicePdf: (userId: number, organizationId: number, invoiceId: number) => api<{ status: string; pdf_url?: string; pdfUrl?: string }>('/invoices/pdf', { userId, organizationId, invoiceId, design: 'standard' }),
-    sendInvoice: (userId: number, organizationId: number, invoiceId: number) => api<{ status: string; message?: string }>('/invoices/send', { userId, organizationId, invoiceId, design: 'standard' }),
+    // recipients: which of the client's addresses get it (the send dialog's ticks).
+    // Left out → the client's primary email. The server refuses an address that is not on the client.
+    sendInvoice: (userId: number, organizationId: number, invoiceId: number, recipients?: string[]) => api<{ status: string; message?: string }>('/invoices/send', { userId, organizationId, invoiceId, design: 'standard', ...(recipients ? { recipients } : {}) }),
     setInvoiceStatus: (userId: number, organizationId: number, invoiceId: number, status: string, paymentMethod?: string, paidAt?: string) =>
         api('/invoices/set-status', { userId, organizationId, invoiceId, status, paymentMethod, paidAt }),
     defaults: (organization_id: number, country_code: string, state_province: string, employment_type: string) =>

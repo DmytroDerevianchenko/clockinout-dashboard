@@ -3,12 +3,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError } from '../api/client';
 import { orgApi, type InvoiceRow } from '../api/org';
-import { invoicesApi } from '../api/invoices';
+import { clientsApi, invoicesApi } from '../api/invoices';
 import { money } from '../api/payroll';
 import { dateOnly } from '../api/team';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../auth';
-import { SkeletonTable } from '../components/Skeleton';
+import { SkeletonLines, SkeletonTable } from '../components/Skeleton';
 import Dialog, { SaveFooter } from '../components/Dialog';
 import InvoiceEditor from './InvoiceEditor';
 import RowMenu from '../components/Menu';
@@ -42,12 +42,12 @@ export default function Invoices() {
 
     const toast = useToast();
     const [confirmAct, setConfirmAct] = useState<{ inv: InvoiceRow; kind: 'cancel' | 'delete' } | null>(null);
-    async function act(inv: InvoiceRow, kind: 'pdf' | 'send' | 'unpaid' | 'delete' | 'marksent' | 'cancel' | 'restore') {
+    async function act(inv: InvoiceRow, kind: 'pdf' | 'send' | 'unpaid' | 'delete' | 'marksent' | 'cancel' | 'restore', recipients?: string[]) {
         if (!session || !org) return;
         setBusy(`${kind}-${inv.id}`); setError(null);
         try {
             if (kind === 'pdf') { const r = await orgApi.invoicePdf(session.userId, org.organization_id, inv.id); const u = r.pdf_url ?? r.pdfUrl; if (u) window.open(u, '_blank', 'noopener'); }
-            else if (kind === 'send') { await orgApi.sendInvoice(session.userId, org.organization_id, inv.id); setConfirmSend(null); load(); }
+            else if (kind === 'send') { await orgApi.sendInvoice(session.userId, org.organization_id, inv.id, recipients); setConfirmSend(null); toast(tx("{0} sent", inv.invoice_number)); load(); }
             else if (kind === 'restore') { await invoicesApi.recover(session.userId, org.organization_id, inv.id); toast(`${inv.invoice_number} restored`); load(); }
             else if (kind === 'unpaid') { await orgApi.setInvoiceStatus(session.userId, org.organization_id, inv.id, 'sent'); load(); }
             // Handed over on paper or sent from your own mail: sent, with no email from here.
@@ -120,13 +120,52 @@ export default function Invoices() {
             {stats && <InvoiceStatsDialog onClose={() => setStats(false)} />}
             {paying && <MarkPaidDialog invoice={paying} onClose={() => setPaying(null)} onDone={() => { setPaying(null); toast(tx("{0} marked paid", paying.invoice_number)); load(); }} />}
             {editor && <InvoiceEditor invoiceId={editor.invoiceId} copyOf={editor.copyOf} clientId={editor.clientId} onClose={() => setEditor(null)} onDone={() => { setEditor(null); load(); }} />}
-            {confirmSend && (
-                <Dialog title={tx("Send {0}?", confirmSend.invoice_number)} subtitle={tx('{0} to {1}.', money(confirmSend.total), confirmSend.client_name ?? tx('the client')) + ' ' + (confirmSend.status === 'draft' ? tx('The issue and due dates become today and the client’s terms.') : tx('The client receives the PDF again.'))} onClose={() => setConfirmSend(null)}
-                    footer={<SaveFooter onCancel={() => setConfirmSend(null)} label={tx("Send")} saving={busy === `send-${confirmSend.id}`} onSave={() => act(confirmSend, 'send')} />}>
-                    <p className="muted">{tx("The email goes from invoices@clockinout.ca with your email as the reply address.")}</p>
-                </Dialog>
-            )}
+            {confirmSend && <SendDialog invoice={confirmSend} sending={busy === `send-${confirmSend.id}`} error={error} onClose={() => setConfirmSend(null)} onSend={recipients => act(confirmSend, 'send', recipients)} />}
         </>
+    );
+}
+
+// Send: WHO receives it is on the screen before anything leaves. The client's
+// primary address and the extra ones kept on the client, all ticked to start
+// (the phone's send sheet). One address → it is simply shown.
+function SendDialog({ invoice, sending, error, onClose, onSend }: { invoice: InvoiceRow; sending: boolean; error: string | null; onClose: () => void; onSend: (recipients?: string[]) => void }) {
+    const { session, org } = useAuth();
+    const [all, setAll] = useState<string[] | null>(null);
+    const [picked, setPicked] = useState<Set<string>>(new Set());
+    const [loadError, setLoadError] = useState<string | null>(null);
+    useEffect(() => {
+        if (!session || !org) return;
+        let stale = false;
+        clientsApi.list(session.userId, org.organization_id, true).then(r => {
+            if (stale) return;
+            const c = r.clients.find(x => x.id === invoice.client_id);
+            // No primary email → nowhere to send (the server says the same).
+            const list = c?.email ? [c.email, ...(c.cc_emails ?? [])].filter(e => e && e.trim()) : [];
+            const unique = [...new Map(list.map(e => [e.toLowerCase(), e])).values()];
+            setAll(unique); setPicked(new Set(unique));
+        }).catch(e => { if (!stale) { setAll([]); setLoadError(e instanceof ApiError ? e.message : tx("Could not load the client’s addresses")); } });
+        return () => { stale = true; };
+    }, [session, org, invoice.client_id]);
+    const toggle = (e: string) => setPicked(p => { const n = new Set(p); if (n.has(e)) n.delete(e); else n.add(e); return n; });
+    const chosen = (all ?? []).filter(e => picked.has(e));
+    return (
+        <Dialog title={tx("Send {0}?", invoice.invoice_number)} onClose={onClose}
+            subtitle={tx('{0} to {1}.', money(invoice.total), invoice.client_name ?? tx('the client')) + ' ' + (invoice.status === 'draft' ? tx('If the draft is dated earlier, its issue date becomes today and the due date moves by the same number of days.') : tx('The client receives the PDF again.'))}
+            footer={<SaveFooter onCancel={onClose} label={tx("Send")} saving={sending} disabled={chosen.length === 0} onSave={() => onSend(all && all.length > 1 ? chosen : undefined)} />}>
+            <div className="eyebrow nopad">{tx("Send to")}</div>
+            {all === null ? <SkeletonLines n={2} />
+                : loadError ? <p className="error-line">{loadError}</p>
+                : all.length === 0 ? <p className="caution">{tx("This client has no email; add one before sending.")}</p>
+                : all.length === 1 ? <p><strong>{all[0]}</strong></p>
+                : (
+                    <>
+                        {all.map(e => <label className="check" key={e}><input type="checkbox" checked={picked.has(e)} onChange={() => toggle(e)} /> {e}</label>)}
+                        <p className="muted small">{tx("Untick anyone who should not receive this one. The addresses are kept on the client.")}</p>
+                    </>
+                )}
+            <p className="muted">{tx("The email goes from invoices@clockinout.ca with your email as the reply address.")}</p>
+            {error && <p className="error-line">{error}</p>}
+        </Dialog>
     );
 }
 

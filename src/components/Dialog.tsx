@@ -3,8 +3,10 @@
 import { useEffect, type ReactNode } from 'react';
 import { tx } from '../i18n';
 
-export default function Dialog({ title, subtitle, onClose, children, footer, wide }: {
-    title: string; subtitle?: string; onClose: () => void; children: ReactNode; footer?: ReactNode; wide?: boolean;
+export default function Dialog({ title, subtitle, onClose, children, footer, wide, xwide }: {
+    title: string; subtitle?: string; onClose: () => void; children: ReactNode; footer?: ReactNode;
+    /** The starting width: 440 by default, 680 wide, 920 xwide. The person can stretch any of them. */
+    wide?: boolean; xwide?: boolean;
 }) {
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -13,7 +15,7 @@ export default function Dialog({ title, subtitle, onClose, children, footer, wid
     }, [onClose]);
     return (
         <div className="backdrop" onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}>
-            <div className={'modal' + (wide ? ' modal-wide' : '')} role="dialog" aria-modal="true" aria-label={title}>
+            <div className={'modal' + (xwide ? ' modal-xwide' : wide ? ' modal-wide' : '')} role="dialog" aria-modal="true" aria-label={title}>
                 <div className="modal-head">
                     <h2>{title}</h2>
                     {subtitle && <p className="muted">{subtitle}</p>}

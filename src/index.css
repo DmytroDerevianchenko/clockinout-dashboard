@@ -333,13 +333,22 @@ tr.muted td { color: var(--ink-muted); }
 .table.lines td:first-child { padding-left: 0; }
 .table.lines input, .table.lines textarea { padding: 8px 10px; border-radius: 8px; }
 .table.lines td:nth-child(5) { padding-top: 14px; white-space: nowrap; }
+/* A line's description grows DOWN only. Its width is the column's: stretching
+   it sideways pushed Qty, Price and the × out of the window. For more room
+   across, stretch the window itself. */
+.table.lines textarea { resize: vertical; width: 100%; }
 
 /* ── Modal: the web's editor sheet. The page dims and blurs; the sheet lands. ── */
 .backdrop { position: fixed; inset: 0; background: var(--scrim); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); display: grid; place-items: center; padding: 16px; z-index: 50; animation: fade var(--fast) var(--ease) both; }
-.modal { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); width: 100%; max-width: 440px; max-height: 92vh; display: flex; flex-direction: column; box-shadow: var(--shadow-pop); animation: pop var(--base) var(--ease-emph) both; }
-.modal-wide { max-width: 680px; }
+/* resize: both — the corner grip (bottom right) stretches the window, like a
+   textarea's. It needs overflow other than visible, and a WIDTH to start
+   from (not max-width, which would cap the stretch): the window may grow to
+   the edges of the screen. */
+.modal { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); width: 440px; max-width: 100%; min-width: min(320px, 100%); max-height: 100%; min-height: 160px; display: flex; flex-direction: column; box-shadow: var(--shadow-pop); animation: pop var(--base) var(--ease-emph) both; resize: both; overflow: hidden; }
+.modal-wide { width: 680px; }
+.modal-xwide { width: 920px; }
 .modal-head { padding: 22px 24px 6px; } .modal-head h2 { margin-bottom: 0; } .modal-head p { margin: 6px 0 0; font-size: 13px; line-height: 18px; }
-.modal-body { padding: 14px 24px; overflow: auto; scrollbar-width: thin; }
+.modal-body { padding: 14px 24px; overflow: auto; scrollbar-width: thin; flex: 1 1 auto; min-height: 0; }
 .modal-foot { padding: 14px 24px 18px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--line); }
 /* Rows inside a dialog are already "arrived": no second cascade under the sheet's own entrance. */
 .modal .table tbody tr { animation: none; }
