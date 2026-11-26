@@ -1,7 +1,8 @@
 // The frame around every signed-in page: brand, navigation, organization
 // switcher, who is signed in, sign out. Pages render inside <Outlet />.
 import type { ReactNode } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import ErrorBoundary from '../components/ErrorBoundary';
 import { useAuth } from '../auth';
 import ThemeSwitch from '../components/ThemeSwitch';
 import LangSwitch from '../components/LangSwitch';
@@ -47,6 +48,7 @@ export const initialsOf = (name: string) => {
 
 export default function Shell() {
     const { session, org, setOrgId, signOut } = useAuth();
+    const { pathname } = useLocation();
     const orgs = session?.organizations ?? [];
     const who = session?.fullName || session?.email || '';
 
@@ -84,7 +86,8 @@ export default function Shell() {
                         </label>
                     )}
                 </div>
-                <Outlet />
+                {/* key: moving to another page clears a crash on this one */}
+                <ErrorBoundary key={pathname}><Outlet /></ErrorBoundary>
             </main>
         </div>
     );

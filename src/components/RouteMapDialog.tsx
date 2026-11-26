@@ -11,7 +11,9 @@ import MapView, { type MapPoint } from './MapView';
 import { SkeletonLines } from './Skeleton';
 import { tx, txn } from '../i18n';
 
-type Ping = { id: number; action: string | null; latitude: number | string | null; longitude: number | string | null; last_updated: string; geofence: string | null };
+// geofence: was this point INSIDE the fence? The server stores a yes/no
+// (true = inside, false = outside, null = no fence was checked).
+type Ping = { id: number; action: string | null; latitude: number | string | null; longitude: number | string | null; last_updated: string; geofence: boolean | null };
 const num = (v: unknown) => (v == null || v === '' ? NaN : Number(v));
 const ok = (lat: number, lon: number) => Number.isFinite(lat) && Number.isFinite(lon) && !(lat === 0 && lon === 0);
 
@@ -32,7 +34,7 @@ export default function RouteMapDialog({ shift, job, onClose }: { shift: Shift; 
 
     const { points, path, circle, outside } = useMemo(() => {
         const points: MapPoint[] = [];
-        const trail = (pings ?? []).map(p => ({ lat: num(p.latitude), lon: num(p.longitude), t: p.last_updated, action: p.action ?? '', out: (p.geofence ?? '').toLowerCase().includes('out') })).filter(p => ok(p.lat, p.lon));
+        const trail = (pings ?? []).map(p => ({ lat: num(p.latitude), lon: num(p.longitude), t: p.last_updated, action: p.action ?? '', out: p.geofence === false })).filter(p => ok(p.lat, p.lon));
         const jLat = num(job?.latitude), jLon = num(job?.longitude);
         const circle = job && ok(jLat, jLon) && job.geofence_enabled ? { lat: jLat, lon: jLon, radius: job.geofence_radius ?? 100 } : undefined;
         if (job && ok(jLat, jLon)) points.push({ lat: jLat, lon: jLon, kind: 'job', label: tx("Job site · {0}", job.name) });

@@ -850,7 +850,10 @@
     "Tax {0} · CPP {1} + {2} · EI {3} + {4}": "Impôt {0} · RPC {1} + {2} · AE {3} + {4}",
     "Employer": "Employeur",
     "CPP2": "RPC2",
-    "Q{0} {1}": "T{0} {1}"
+    "Q{0} {1}": "T{0} {1}",
+    "This page hit a problem": "Cette page a rencontré un problème",
+    "Nothing was lost — your data is safe. Reload the page to carry on.": "Rien n’a été perdu : vos données sont en sécurité. Rechargez la page pour continuer.",
+    "Reload": "Recharger"
   },
   "plurals": {
     "Added {n} shifts to {0}": {
