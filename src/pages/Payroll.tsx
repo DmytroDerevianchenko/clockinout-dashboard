@@ -18,6 +18,7 @@ import { EditPayrollDialog, RecordPaymentDialog } from './PayrollEdit';
 import PayrollConfigDialog from './PayrollConfig';
 import PaystubsDialog from '../components/PaystubsDialog';
 import { tx, txn, perHour } from '../i18n';
+import { rowOpens } from '../components/rowClick';
 
 type Names = Map<number, RosterUser>;
 
@@ -178,7 +179,7 @@ export default function Payroll() {
                                                 const u = names.get(b.userId);
                                                 const contractor = b.employmentType === 'contractor';
                                                 return (
-                                                    <tr key={b.userId}>
+                                                    <tr key={b.userId} className="row-click" {...rowOpens(() => setDetail({ period: p, b }))}>
                                                         <td><button className="row-link linkish" onClick={() => setDetail({ period: p, b })}><strong>{u?.full_name ?? `#${b.userId}`}</strong></button>
                                                             <div className="faint small">{contractor ? tx("Contractor") : b.employmentType === 'casual' ? tx("Casual") : b.jurisdiction ?? ''}{b.manualOverride ? tx(" · edited by hand") : ''}</div></td>
                                                         <td>{hours(b.totalHours)}</td>

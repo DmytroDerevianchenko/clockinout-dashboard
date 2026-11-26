@@ -13,6 +13,7 @@ import MapView from '../components/MapView';
 import { JobStatsDialog } from '../components/StatsDialog';
 import { useToast } from '../components/Toast';
 import { tx } from '../i18n';
+import { rowOpens } from '../components/rowClick';
 
 export default function Jobs() {
     const { session, org } = useAuth();
@@ -63,7 +64,7 @@ export default function Jobs() {
                     <thead><tr><th>{tx("Job")}</th><th>{tx("Address")}</th><th>{tx("Geofence")}</th><th>{tx("On site now")}</th><th></th></tr></thead>
                     <tbody>
                         {list.map(j => (
-                            <tr key={j.id} className={j.archived ? 'muted' : ''}>
+                            <tr key={j.id} className={'row-click' + (j.archived ? ' muted' : '')} {...rowOpens(() => setEditing(j))}>
                                 <td><button className="row-link linkish" onClick={() => setEditing(j)}><strong>{j.name}</strong></button>
                                     {j.archived && <span className="pill">{tx("Archived")}</span>}
                                     {j.description && <div className="faint small">{j.description}</div>}</td>

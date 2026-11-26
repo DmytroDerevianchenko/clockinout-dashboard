@@ -4,7 +4,8 @@
 // to overtime), then the people on the clock with a live duration.
 // Each figure is a door: it opens the page where that number is handled.
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { rowOpens } from '../components/rowClick';
 import { ApiError } from '../api/client';
 import { team, money, type RosterReply } from '../api/team';
 import { orgApi } from '../api/org';
@@ -23,6 +24,7 @@ const startedAt = (iso: string | null) => iso ? new Date(iso).toLocaleTimeString
 
 export default function Home() {
     const { session, org } = useAuth();
+    const navigate = useNavigate();
     const [roster, setRoster] = useState<RosterReply | null>(null);
     const [error, setError] = useState<string | null>(null);
     // The two money figures load on their own: a slow or refused one never
@@ -106,7 +108,7 @@ export default function Home() {
                         <thead><tr><th>{tx("Name")}</th><th>{tx("Job")}</th><th>{tx("Since")}</th><th>{tx("Duration")}</th></tr></thead>
                         <tbody>
                             {onClock.flatMap(u => (u.active_shifts?.length ? u.active_shifts : [{ clockin_id: 0, job_id: 0, job_name: u.current_job_name, clock_in_time: u.clock_in_time ?? '' }]).map(s => (
-                                <tr key={`${u.id}-${s.clockin_id}`}>
+                                <tr key={`${u.id}-${s.clockin_id}`} className="row-click" {...rowOpens(() => navigate(`/team/${u.id}`))}>
                                     <td><Link className="row-link" to={`/team/${u.id}`}><span className="avatar avatar-sm live">{initialsOf(u.full_name || u.email)}</span><strong>{u.full_name}</strong></Link></td>
                                     <td>{s.job_name ?? <span className="faint">—</span>}</td>
                                     <td>{startedAt(s.clock_in_time)}</td>

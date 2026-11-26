@@ -14,6 +14,7 @@ import RowMenu from '../components/Menu';
 import { TeamStatsDialog } from '../components/StatsDialog';
 import { useToast } from '../components/Toast';
 import { tx, hoursText, perHour } from '../i18n';
+import { rowOpens } from '../components/rowClick';
 
 export function useRoster() {
     const { session, org } = useAuth();
@@ -97,7 +98,7 @@ export default function Team() {
                             const over = ot.enabled && ot.threshold > 0 && u.week_hours >= ot.threshold;
                             const near = ot.enabled && ot.threshold > 0 && !over && u.week_hours >= ot.threshold * 0.9;
                             return (
-                                <tr key={u.id}>
+                                <tr key={u.id} className="row-click" {...rowOpens(() => navigate(`/team/${u.id}`))}>
                                     <td>
                                         <Link to={`/team/${u.id}`} className="row-link">
                                             <span className={'dot' + (u.is_clocked_in ? ' live' : '')} />

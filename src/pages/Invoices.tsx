@@ -15,6 +15,7 @@ import RowMenu from '../components/Menu';
 import { InvoiceStatsDialog } from '../components/StatsDialog';
 import { useToast } from '../components/Toast';
 import { tx } from '../i18n';
+import { rowOpens } from '../components/rowClick';
 
 export default function Invoices() {
     const { session, org } = useAuth();
@@ -82,7 +83,8 @@ export default function Invoices() {
                         <thead><tr><th>{tx("Number")}</th><th>{tx("Client")}</th><th>{tx("Job")}</th><th>{tx("Issued")}</th><th>{tx("Due")}</th><th>{tx("Total")}</th><th>{tx("Status")}</th><th></th></tr></thead>
                         <tbody>
                             {list.map(i => (
-                                <tr key={i.id} className={i.is_deleted ? 'muted' : ''}>
+                                <tr key={i.id} className={i.is_deleted ? 'muted' : (i.status === 'draft' || i.status === 'sent') ? 'row-click' : ''}
+                                    {...((i.status === 'draft' || i.status === 'sent') && !i.is_deleted ? rowOpens(() => setEditor({ invoiceId: i.id })) : {})}>
                                     <td>{(i.status === 'draft' || i.status === 'sent') && !i.is_deleted ? <button className="row-link linkish" title={tx("Edit")} onClick={() => setEditor({ invoiceId: i.id })}><strong>{i.invoice_number}</strong></button> : <strong>{i.invoice_number}</strong>}{i.is_opening && <span className="pill" title={tx("A balance carried forward from before the app")}>{tx("Carried forward")}</span>}</td>
                                     <td>{i.client_name ?? '—'}</td>
                                     <td>{i.job_name ?? <span className="faint">—</span>}</td>

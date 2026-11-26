@@ -28,6 +28,7 @@ const SAMPLE_REMIT: RemitPeriod = {
     ],
 };
 import RowMenu from '../components/Menu';
+import { rowOpens } from '../components/rowClick';
 import AddressSearch, { type FoundAddress } from '../components/AddressSearch';
 import MapView from '../components/MapView';
 import { useToast } from '../components/Toast';
@@ -150,7 +151,7 @@ export default function Styleguide() {
                                     {CREW.map(u => {
                                         const over = u.week >= u.cap, near = !over && u.week >= u.cap * 0.9;
                                         return (
-                                            <tr key={u.name}>
+                                            <tr key={u.name} className="row-click" {...rowOpens(() => toast(`Row opened: ${u.name}`))}>
                                                 <td><a className="row-link" href="#"><span className={'dot' + (u.live ? ' live' : '')} /><strong>{u.name}</strong>{u.name === 'Alex Rivera' && <span className="pill">Admin</span>}</a>
                                                     <div className="faint small">{u.live ? `On the clock · ${u.job} since 7:02 AM` : 'name@example.com'}</div></td>
                                                 <td>{u.type}</td>

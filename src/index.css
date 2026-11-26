@@ -538,3 +538,7 @@ button.stat-link { display: flex; flex-direction: column; align-items: flex-star
 .remit-person td { color: var(--ink-muted); padding-top: 6px; padding-bottom: 6px; }
 .remit-person td:first-child { padding-left: 24px; }
 .remit-note { margin-top: 16px; max-width: 900px; }
+
+/* A table row that opens its details wherever it is clicked (components/rowClick.ts). */
+.table tbody tr.row-click { cursor: pointer; }
+.table tbody tr.row-click:hover { background: var(--surface-2); }

@@ -14,6 +14,7 @@ import { PaymentStatsDialog } from '../components/StatsDialog';
 import { SkeletonTable } from '../components/Skeleton';
 import { useToast } from '../components/Toast';
 import { tx, txn } from '../i18n';
+import { rowOpens } from '../components/rowClick';
 
 export default function Payments() {
     const { session, org } = useAuth();
@@ -74,7 +75,7 @@ export default function Payments() {
                         <thead><tr><th>{tx("Date")}</th><th>{tx("Person")}</th><th>{tx("Amount")}</th><th>{tx("Method")}</th><th>{tx("Status")}</th><th>{tx("Note")}</th><th></th></tr></thead>
                         <tbody>
                             {list.map(p => (
-                                <tr key={p.id} className={p.is_deleted ? 'muted' : ''}>
+                                <tr key={p.id} className={p.is_deleted ? 'muted' : 'row-click'} {...(p.is_deleted ? {} : rowOpens(() => setEditing(p)))}>
                                     <td>{dateOnly(p.payment_date)}</td>
                                     <td><strong>{p.user_name}</strong><div className="faint small">{tx("Payment #")}{p.payment_number}{p.invoice_id ? tx(" · contractor invoice") : ''}</div></td>
                                     <td>{money(p.amount_paid)}</td>

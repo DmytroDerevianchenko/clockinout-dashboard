@@ -12,6 +12,7 @@ import { useToast } from '../components/Toast';
 import { SkeletonTable } from '../components/Skeleton';
 import Dialog, { SaveFooter } from '../components/Dialog';
 import { tx } from '../i18n';
+import { rowOpens } from '../components/rowClick';
 
 export default function Clients() {
     const { session, org } = useAuth();
@@ -46,7 +47,7 @@ export default function Clients() {
                     <thead><tr><th>{tx("Company")}</th><th>{tx("Contact")}</th><th>{tx("Email")}</th><th>{tx("Terms")}</th><th>{tx("Tax")}</th><th>{tx("Invoices")}</th><th>{tx("Owes you")}</th><th></th></tr></thead>
                     <tbody>
                         {clients.map(c => (
-                            <tr key={c.id} className={c.is_deleted ? 'muted' : ''}>
+                            <tr key={c.id} className={'row-click' + (c.is_deleted ? ' muted' : '')} {...rowOpens(() => setEditing(c))}>
                                 <td><button className="row-link linkish" onClick={() => setEditing(c)}><strong>{c.company_name}</strong></button>
                                     <div className="faint small">{[c.city, c.state_province].filter(Boolean).join(', ')}</div></td>
                                 <td>{c.contact_name ?? <span className="faint">—</span>}{c.phone && <div className="faint small">{c.phone}</div>}</td>

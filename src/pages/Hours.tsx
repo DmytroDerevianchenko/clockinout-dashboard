@@ -18,6 +18,7 @@ import EditShiftDialog from '../components/EditShiftDialog';
 import RowMenu from '../components/Menu';
 import RouteMapDialog from '../components/RouteMapDialog';
 import { tx, hoursText } from '../i18n';
+import { rowOpens } from '../components/rowClick';
 
 const n = (v: unknown) => (v == null || v === '' ? 0 : Number(v));
 
@@ -118,7 +119,7 @@ export default function Hours() {
                         <thead><tr><th>{tx("Day")}</th><th>{tx("Person")}</th><th>{tx("Job")}</th><th>{tx("In")}</th><th>{tx("Out")}</th><th>{tx("Break")}</th><th>{tx("Hours")}</th><th>{tx("Earned")}</th><th></th></tr></thead>
                         <tbody>
                             {shifts.map(s => (
-                                <tr key={s.in.id}>
+                                <tr key={s.in.id} className="row-click" {...rowOpens(() => setEdit({ kind: 'shift', shift: s }))}>
                                     <td>{fmtDay(s.in.time)}</td>
                                     <td><strong>{s.user_name}</strong></td>
                                     <td>{s.job_name ?? <span className="faint">—</span>}</td>
