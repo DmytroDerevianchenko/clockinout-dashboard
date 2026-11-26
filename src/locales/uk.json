@@ -858,7 +858,10 @@
     "Issue date + {0} days (the client’s terms).": "Дата виставлення + {0} дн. (умови клієнта).",
     "Optional. Printed on the invoice under “Payment terms”. Press → to use the suggestion; leave it blank to print nothing.": "Необов’язково. Друкується в рахунку під «Payment terms». Натисніть →, щоб використати підказку; залиште порожнім, щоб нічого не друкувати.",
     "Payable within {0} days by e-transfer.": "До сплати протягом {0} днів електронним переказом.",
-    "They appear on the roster right away. To clock in on their own phone they create their own account with this email (you don’t give them a password) and accept your invitation; the email explains the steps.": "Людина одразу з’являється у списку. Щоб відмічатися зі свого телефона, вона створює власний обліковий запис із цією адресою (пароль ви їй не даєте) і приймає ваше запрошення; у листі пояснено кроки."
+    "They appear on the roster right away. To clock in on their own phone they create their own account with this email (you don’t give them a password) and accept your invitation; the email explains the steps.": "Людина одразу з’являється у списку. Щоб відмічатися зі свого телефона, вона створює власний обліковий запис із цією адресою (пароль ви їй не даєте) і приймає ваше запрошення; у листі пояснено кроки.",
+    "Invoice {0}": "Рахунок {0}",
+    "View": "Переглянути",
+    "A paid or cancelled invoice can no longer be changed. Use Duplicate to start a new one from it.": "Оплачений або скасований рахунок більше не можна змінити. Скористайтеся «Дублювати», щоб створити новий на його основі."
   },
   "plurals": {
     "Added {n} shifts to {0}": {

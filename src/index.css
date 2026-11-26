@@ -347,6 +347,10 @@ tr.muted td { color: var(--ink-muted); }
 .modal { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); width: 440px; max-width: 100%; min-width: min(320px, 100%); max-height: 100%; min-height: 160px; display: flex; flex-direction: column; box-shadow: var(--shadow-pop); animation: pop var(--base) var(--ease-emph) both; resize: both; overflow: hidden; }
 .modal-wide { width: 680px; }
 .modal-xwide { width: 920px; }
+/* A fieldset used only to switch a whole form off (read-only views): no frame of its own. */
+fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
+fieldset.plain:disabled input, fieldset.plain:disabled select, fieldset.plain:disabled textarea { opacity: 1; color: var(--ink); cursor: default; }
+fieldset.plain:disabled .btn { display: none; }
 .modal-head { padding: 22px 24px 6px; } .modal-head h2 { margin-bottom: 0; } .modal-head p { margin: 6px 0 0; font-size: 13px; line-height: 18px; }
 .modal-body { padding: 14px 24px; overflow: auto; scrollbar-width: thin; flex: 1 1 auto; min-height: 0; }
 .modal-foot { padding: 14px 24px 18px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--line); }

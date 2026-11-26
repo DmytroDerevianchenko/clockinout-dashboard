@@ -23,7 +23,9 @@ export default function Invoices() {
     const [error, setError] = useState<string | null>(null);
     const [busy, setBusy] = useState<string | null>(null);
     const [confirmSend, setConfirmSend] = useState<InvoiceRow | null>(null);
-    const [editor, setEditor] = useState<{ invoiceId?: number; copyOf?: number; clientId?: number } | null>(null);
+    const [editor, setEditor] = useState<{ invoiceId?: number; copyOf?: number; clientId?: number; readOnly?: boolean } | null>(null);
+    // Every invoice opens from its row: a draft or a sent one to edit, a paid or cancelled one to look at.
+    const open = (i: InvoiceRow) => setEditor({ invoiceId: i.id, readOnly: !(i.status === 'draft' || i.status === 'sent') });
     const [filter, setFilter] = useState<'all' | 'draft' | 'sent' | 'paid'>('all');
     const [showDeleted, setShowDeleted] = useState(false);
     const [paying, setPaying] = useState<InvoiceRow | null>(null);
@@ -83,9 +85,9 @@ export default function Invoices() {
                         <thead><tr><th>{tx("Number")}</th><th>{tx("Client")}</th><th>{tx("Job")}</th><th>{tx("Issued")}</th><th>{tx("Due")}</th><th>{tx("Total")}</th><th>{tx("Status")}</th><th></th></tr></thead>
                         <tbody>
                             {list.map(i => (
-                                <tr key={i.id} className={i.is_deleted ? 'muted' : (i.status === 'draft' || i.status === 'sent') ? 'row-click' : ''}
-                                    {...((i.status === 'draft' || i.status === 'sent') && !i.is_deleted ? rowOpens(() => setEditor({ invoiceId: i.id })) : {})}>
-                                    <td>{(i.status === 'draft' || i.status === 'sent') && !i.is_deleted ? <button className="row-link linkish" title={tx("Edit")} onClick={() => setEditor({ invoiceId: i.id })}><strong>{i.invoice_number}</strong></button> : <strong>{i.invoice_number}</strong>}{i.is_opening && <span className="pill" title={tx("A balance carried forward from before the app")}>{tx("Carried forward")}</span>}</td>
+                                <tr key={i.id} className={i.is_deleted ? 'muted' : 'row-click'}
+                                    {...(!i.is_deleted ? rowOpens(() => open(i)) : {})}>
+                                    <td>{!i.is_deleted ? <button className="row-link linkish" title={i.status === 'draft' || i.status === 'sent' ? tx("Edit") : tx("View")} onClick={() => open(i)}><strong>{i.invoice_number}</strong></button> : <strong>{i.invoice_number}</strong>}{i.is_opening && <span className="pill" title={tx("A balance carried forward from before the app")}>{tx("Carried forward")}</span>}</td>
                                     <td>{i.client_name ?? '—'}</td>
                                     <td>{i.job_name ?? <span className="faint">—</span>}</td>
                                     <td>{i.status === 'draft' ? <span className="faint">{tx("on send")}</span> : dateOnly(i.issue_date)}</td>
@@ -119,7 +121,7 @@ export default function Invoices() {
             )}
             {stats && <InvoiceStatsDialog onClose={() => setStats(false)} />}
             {paying && <MarkPaidDialog invoice={paying} onClose={() => setPaying(null)} onDone={() => { setPaying(null); toast(tx("{0} marked paid", paying.invoice_number)); load(); }} />}
-            {editor && <InvoiceEditor invoiceId={editor.invoiceId} copyOf={editor.copyOf} clientId={editor.clientId} onClose={() => setEditor(null)} onDone={() => { setEditor(null); load(); }} />}
+            {editor && <InvoiceEditor invoiceId={editor.invoiceId} copyOf={editor.copyOf} clientId={editor.clientId} readOnly={editor.readOnly} onClose={() => setEditor(null)} onDone={() => { setEditor(null); load(); }} />}
             {confirmSend && <SendDialog invoice={confirmSend} sending={busy === `send-${confirmSend.id}`} error={error} onClose={() => setConfirmSend(null)} onSend={recipients => act(confirmSend, 'send', recipients)} />}
         </>
     );

@@ -26,7 +26,9 @@ const today = () => new Date().toLocaleDateString('en-CA');
 const addDays = (iso: string, days: number) => { const d = new Date(iso + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + days); return d.toISOString().slice(0, 10); };
 const termsDays = (c?: Client) => c?.payment_terms_days ?? 30;
 
-export default function InvoiceEditor({ invoiceId, copyOf, clientId: startClient, onClose, onDone }: { invoiceId?: number; copyOf?: number; clientId?: number; onClose: () => void; onDone: () => void }) {
+// readOnly: a paid or cancelled invoice is opened to be LOOKED at — the same
+// window with every field switched off (the server would refuse a change anyway).
+export default function InvoiceEditor({ invoiceId, copyOf, clientId: startClient, readOnly, onClose, onDone }: { invoiceId?: number; copyOf?: number; clientId?: number; readOnly?: boolean; onClose: () => void; onDone: () => void }) {
     const { session, org } = useAuth();
     const [clients, setClients] = useState<Client[]>([]);
     const [jobs, setJobs] = useState<Job[]>([]);
@@ -46,6 +48,7 @@ export default function InvoiceEditor({ invoiceId, copyOf, clientId: startClient
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [newClient, setNewClient] = useState(false);
+    const [number, setNumber] = useState('');
 
     useEffect(() => {
         if (!session || !org) return;
@@ -58,6 +61,7 @@ export default function InvoiceEditor({ invoiceId, copyOf, clientId: startClient
             if (src) {
                 const r = await invoicesApi.get(session.userId, org.organization_id, src);
                 const inv = r.invoice;
+                if (invoiceId) setNumber(inv.invoice_number);
                 setClientId(inv.client_id); setJobId(inv.job_id ?? '');
                 setLines(inv.items.map(it => ({ description: it.description, quantity: String(Number(it.quantity)), unit: it.unit ?? '', unitPrice: String(Number(it.unit_price)) })));
                 setTaxRate(String(r2(Number(inv.tax_rate) * 100)));
@@ -102,11 +106,14 @@ export default function InvoiceEditor({ invoiceId, copyOf, clientId: startClient
     }
 
     return (
-        <Dialog title={invoiceId ? tx("Edit draft") : copyOf ? tx("Copy of invoice") : tx("New invoice")} xwide onClose={onClose}
-            subtitle={tx("Saved as a draft. If you send it on a later day, the dates move with it: the client gets the same number of days to pay.")}
-            footer={<SaveFooter onCancel={onClose} onSave={save} saving={saving} disabled={!loaded || clientId === ''} label={invoiceId ? tx("Save") : tx("Create draft")} />}>
+        <Dialog title={readOnly ? tx("Invoice {0}", number) : invoiceId ? tx("Edit draft") : copyOf ? tx("Copy of invoice") : tx("New invoice")} xwide onClose={onClose}
+            subtitle={readOnly ? tx("A paid or cancelled invoice can no longer be changed. Use Duplicate to start a new one from it.")
+                : tx("Saved as a draft. If you send it on a later day, the dates move with it: the client gets the same number of days to pay.")}
+            footer={readOnly ? <button className="btn btn-primary" type="button" onClick={onClose}>{tx("Close")}</button>
+                : <SaveFooter onCancel={onClose} onSave={save} saving={saving} disabled={!loaded || clientId === ''} label={invoiceId ? tx("Save") : tx("Create draft")} />}>
             {!loaded ? <SkeletonLines n={4} /> : (
-                <>
+                /* A disabled fieldset switches off every field and button inside it in one go. */
+                <fieldset className="plain" disabled={readOnly}>
                     <div className="grid-2">
                         <label className="field"><span>{tx("Client")}</span>
                             <div className="inline-row">
@@ -163,7 +170,7 @@ export default function InvoiceEditor({ invoiceId, copyOf, clientId: startClient
                         <small className="muted">{tx("Optional. Printed on the invoice under “Payment terms”. Press → to use the suggestion; leave it blank to print nothing.")}</small>
                     </label>
                     {error && <p className="error-line">{error}</p>}
-                </>
+                </fieldset>
             )}
             {newClient && <ClientDialog client={null} onClose={() => setNewClient(false)} onDone={created => { setNewClient(false); if (created) { setClients(cs => [...cs, created]); setClientId(created.id); } }} />}
         </Dialog>
